@@ -1,0 +1,7 @@
+# Dotfiles (machine-specific, sensitive, or generated)
+.*
+!.gitignore
+
+# Dependencies and build output
+node_modules
+dist
