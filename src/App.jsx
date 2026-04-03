@@ -41,9 +41,9 @@ export default function App() {
     fetchProfile(session)
   }, [session?.user.id])
 
-  if (session === undefined || profile === undefined) return null
-
+  if (session === undefined) return null
   if (!session) return <Auth />
+  if (profile === undefined) return null
 
   if (!profile) return <ProfileSetup session={session} onComplete={() => fetchProfile(session)} />
 
