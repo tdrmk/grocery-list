@@ -29,7 +29,8 @@ create policy "Users can update their own profile"
 create policy "Users see their lists"
   on lists for select
   using (
-    id in (select list_id from list_members where user_id = auth.uid())
+    created_by = auth.uid()
+    or id in (select list_id from list_members where user_id = auth.uid())
   );
 
 create policy "Authenticated users can create lists"
@@ -46,9 +47,7 @@ create policy "Creator can delete list"
 
 create policy "Users see members of their lists"
   on list_members for select
-  using (
-    list_id in (select list_id from list_members where user_id = auth.uid())
-  );
+  using (user_id = auth.uid());
 
 create policy "Users can join lists"
   on list_members for insert
