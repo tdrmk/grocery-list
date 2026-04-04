@@ -79,43 +79,95 @@ export default function ListView({ session }) {
 
   if (loading) return null
 
-  if (!list) return <p>List not found. <button onClick={() => navigate('/')}>Go back</button></p>
+  if (!list) return (
+    <div className="min-h-dvh flex flex-col items-center justify-center px-6 text-center">
+      <p className="text-gray-500 mb-4">List not found.</p>
+      <button onClick={() => navigate('/')} className="text-primary font-semibold">Go back</button>
+    </div>
+  )
 
   const activeItems = items.filter(i => i.status === 'active')
   const purchasedItems = items.filter(i => i.status === 'purchased')
 
   return (
-    <div>
-      <button onClick={() => navigate('/')}>← Back</button>
-      <h1>{list.name}</h1>
-      <button onClick={() => navigate(`/list/${id}/add`)}>+ Add items</button>
-      <button onClick={shareList}>{copied ? 'Link copied!' : 'Share'}</button>
+    <div className="min-h-dvh bg-gray-50">
+      {/* Header */}
+      <div className="sticky top-0 bg-white border-b border-gray-100 z-10">
+        <div className="flex items-center px-4 py-3 gap-3">
+          <button onClick={() => navigate('/')} className="text-primary font-medium text-sm">
+            ← Back
+          </button>
+          <h1 className="flex-1 text-center font-bold text-lg truncate">{list.name}</h1>
+          <button
+            onClick={shareList}
+            className="text-sm text-primary font-medium"
+          >
+            {copied ? '✓ Copied' : 'Share'}
+          </button>
+        </div>
+      </div>
 
+      {/* Add items button */}
+      <div className="px-4 pt-4 pb-2">
+        <button
+          onClick={() => navigate(`/list/${id}/add`)}
+          className="w-full bg-primary text-white font-semibold rounded-xl py-3 text-base"
+        >
+          + Add items
+        </button>
+      </div>
+
+      {/* Empty state */}
       {activeItems.length === 0 && purchasedItems.length === 0 && (
-        <p>No items yet.</p>
+        <p className="text-center text-gray-400 py-16">No items yet.</p>
       )}
 
-      <ul>
-        {activeItems.map(item => (
-          <li key={item.id} onClick={() => togglePurchased(item)}>
-            {item.icon} {item.name} {item.quantity && `(${item.quantity})`}
-          </li>
-        ))}
-      </ul>
+      {/* Active items */}
+      {activeItems.length > 0 && (
+        <ul className="px-4 flex flex-col gap-1 mt-2">
+          {activeItems.map(item => (
+            <li
+              key={item.id}
+              onClick={() => togglePurchased(item)}
+              className="flex items-center gap-3 bg-white rounded-xl px-4 py-3 shadow-sm active:bg-gray-50"
+            >
+              <span className="text-xl">{item.icon}</span>
+              <span className="flex-1 text-base">{item.name}</span>
+              {item.quantity && <span className="text-sm text-gray-400">{item.quantity}</span>}
+            </li>
+          ))}
+        </ul>
+      )}
 
+      {/* Purchased items */}
       {purchasedItems.length > 0 && (
-        <>
-          <p>── Purchased ──</p>
-          <ul>
+        <div className="px-4 mt-6">
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2 px-1">
+            Purchased
+          </p>
+          <ul className="flex flex-col gap-1">
             {purchasedItems.map(item => (
-              <li key={item.id} onClick={() => togglePurchased(item)}>
-                ✓ {item.icon} {item.name}
+              <li
+                key={item.id}
+                onClick={() => togglePurchased(item)}
+                className="flex items-center gap-3 bg-white rounded-xl px-4 py-3 shadow-sm opacity-50 active:bg-gray-50"
+              >
+                <span className="text-xl">{item.icon}</span>
+                <span className="flex-1 text-base line-through">{item.name}</span>
+                <span className="text-green-500 text-sm">✓</span>
               </li>
             ))}
           </ul>
-          <button onClick={clearPurchased}>Clear purchased</button>
-        </>
+          <button
+            onClick={clearPurchased}
+            className="mt-3 w-full text-sm text-gray-400 py-2"
+          >
+            Clear purchased
+          </button>
+        </div>
       )}
+
+      <div className="h-8" />
     </div>
   )
 }

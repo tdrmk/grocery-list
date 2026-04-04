@@ -46,7 +46,22 @@ export default function JoinList({ session }) {
     join()
   }, [token])
 
-  if (error) return <p>{error} <button onClick={() => navigate('/')}>Go home</button></p>
+  if (error) return (
+    <div className="min-h-dvh flex flex-col items-center justify-center px-6 text-center">
+      <div className="text-5xl mb-4">🔗</div>
+      <p className="text-gray-700 mb-6">{error}</p>
+      <button
+        onClick={() => navigate('/')}
+        className="bg-primary text-white font-semibold rounded-xl px-6 py-3"
+      >
+        Go home
+      </button>
+    </div>
+  )
 
-  return null
+  return (
+    <div className="min-h-dvh flex items-center justify-center">
+      <p className="text-gray-400">Joining list…</p>
+    </div>
+  )
 }

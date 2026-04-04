@@ -2,13 +2,13 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../supabaseClient'
 
-export default function AddItem({ session }) {
+export default function AddItem() {
   const { id: listId } = useParams()
   const navigate = useNavigate()
   const [catalog, setCatalog] = useState([])
   const [addedIds, setAddedIds] = useState(new Set())
   const [search, setSearch] = useState('')
-  const [adding, setAdding] = useState(null) // id of item being added
+  const [adding, setAdding] = useState(null)
 
   useEffect(() => {
     supabase
@@ -49,7 +49,6 @@ export default function AddItem({ session }) {
       )
     : catalog
 
-  // Group by category
   const grouped = filtered.reduce((acc, item) => {
     if (!acc[item.category]) acc[item.category] = []
     acc[item.category].push(item)
@@ -57,38 +56,61 @@ export default function AddItem({ session }) {
   }, {})
 
   return (
-    <div>
-      <button onClick={() => navigate(`/list/${listId}`)}>← Back</button>
-      <h1>Add Items</h1>
+    <div className="min-h-dvh bg-gray-50">
+      {/* Sticky header + search */}
+      <div className="sticky top-0 bg-white border-b border-gray-100 z-10">
+        <div className="flex items-center px-4 py-3 gap-3">
+          <button
+            onClick={() => navigate(`/list/${listId}`)}
+            className="text-primary font-medium text-sm shrink-0"
+          >
+            ← Back
+          </button>
+          <input
+            type="search"
+            placeholder="Search items…"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            autoFocus
+            className="flex-1 bg-gray-100 rounded-xl px-4 py-2 text-base focus:outline-none"
+          />
+        </div>
+      </div>
 
-      <input
-        type="search"
-        placeholder="Search catalog…"
-        value={search}
-        onChange={e => setSearch(e.target.value)}
-        autoFocus
-      />
-
+      {/* Catalog */}
       {Object.entries(grouped).map(([category, items]) => (
         <div key={category}>
-          <h2>{category}</h2>
-          <ul>
-            {items.map(item => (
-              <li
-                key={item.id}
-                onClick={() => addItem(item)}
-                style={{ opacity: adding === item.id ? 0.5 : 1 }}
-              >
-                {item.icon} {item.name} {addedIds.has(item.id) && '✓'}
-              </li>
-            ))}
+          <p className="px-4 pt-5 pb-1 text-xs font-semibold text-gray-400 uppercase tracking-wide">
+            {category}
+          </p>
+          <ul className="px-4 flex flex-col gap-1">
+            {items.map(item => {
+              const isAdded = addedIds.has(item.id)
+              const isAdding = adding === item.id
+              return (
+                <li
+                  key={item.id}
+                  onClick={() => !isAdded && addItem(item)}
+                  className={`flex items-center gap-3 bg-white rounded-xl px-4 py-3 shadow-sm transition-opacity ${isAdded ? 'opacity-40' : 'active:bg-gray-50'} ${isAdding ? 'opacity-50' : ''}`}
+                >
+                  <span className="text-xl">{item.icon}</span>
+                  <span className="flex-1 text-base">{item.name}</span>
+                  {isAdded
+                    ? <span className="text-primary text-sm font-semibold">✓</span>
+                    : <span className="text-gray-300 text-xl">+</span>
+                  }
+                </li>
+              )
+            })}
           </ul>
         </div>
       ))}
 
       {filtered.length === 0 && (
-        <p>No items found for "{search}".</p>
+        <p className="text-center text-gray-400 py-16">No items found for "{search}"</p>
       )}
+
+      <div className="h-8" />
     </div>
   )
 }
