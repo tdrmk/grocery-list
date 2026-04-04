@@ -49,9 +49,17 @@ create policy "Users see members of their lists"
   on list_members for select
   using (user_id = auth.uid());
 
-create policy "Users can join lists"
+create policy "Users can join lists via share link"
   on list_members for insert
-  with check (auth.role() = 'authenticated' and user_id = auth.uid());
+  with check (
+    auth.role() = 'authenticated'
+    and user_id = auth.uid()
+    and (
+      list_id in (select id from lists where created_by = auth.uid())
+      or
+      list_id in (select list_id from share_links where claimed_by = auth.uid())
+    )
+  );
 
 -- ============================================================
 -- Catalog
@@ -83,9 +91,12 @@ create policy "Users manage items on their lists"
 -- Share links
 -- ============================================================
 
-create policy "Authenticated users can read unused share links"
+create policy "Authenticated users can read share links"
   on share_links for select
-  using (auth.role() = 'authenticated' and used = false);
+  using (
+    auth.role() = 'authenticated'
+    and (claimed_by is null or claimed_by = auth.uid())
+  );
 
 create policy "List members can create share links"
   on share_links for insert
@@ -93,7 +104,7 @@ create policy "List members can create share links"
     list_id in (select list_id from list_members where user_id = auth.uid())
   );
 
-create policy "Authenticated users can mark share links as used"
+create policy "Authenticated users can claim share links"
   on share_links for update
-  using (auth.role() = 'authenticated' and used = false)
-  with check (used = true);
+  using (auth.role() = 'authenticated' and claimed_by is null)
+  with check (claimed_by = auth.uid());

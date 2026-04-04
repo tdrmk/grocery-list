@@ -8,6 +8,7 @@ export default function ListView({ session }) {
   const [list, setList] = useState(null)
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
+  const [copied, setCopied] = useState(false)
 
   useEffect(() => {
     fetchList()
@@ -64,6 +65,18 @@ export default function ListView({ session }) {
       .eq('status', 'purchased')
   }
 
+  async function shareList() {
+    const { data } = await supabase
+      .from('share_links')
+      .insert({ list_id: id, created_by: session.user.id })
+      .select('token')
+      .single()
+    const url = `${window.location.origin}/join/${data.token}`
+    await navigator.clipboard.writeText(url)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
   if (loading) return null
 
   if (!list) return <p>List not found. <button onClick={() => navigate('/')}>Go back</button></p>
@@ -76,6 +89,7 @@ export default function ListView({ session }) {
       <button onClick={() => navigate('/')}>← Back</button>
       <h1>{list.name}</h1>
       <button onClick={() => navigate(`/list/${id}/add`)}>+ Add items</button>
+      <button onClick={shareList}>{copied ? 'Link copied!' : 'Share'}</button>
 
       {activeItems.length === 0 && purchasedItems.length === 0 && (
         <p>No items yet.</p>

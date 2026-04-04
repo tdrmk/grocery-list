@@ -6,6 +6,7 @@ import ProfileSetup from './components/ProfileSetup'
 import ListsView from './components/ListsView'
 import ListView from './components/ListView'
 import AddItem from './components/AddItem'
+import JoinList from './components/JoinList'
 
 export default function App() {
   const [session, setSession] = useState(undefined)
@@ -53,6 +54,7 @@ export default function App() {
         <Route path="/" element={<ListsView session={session} />} />
         <Route path="/list/:id" element={<ListView session={session} />} />
         <Route path="/list/:id/add" element={<AddItem session={session} />} />
+        <Route path="/join/:token" element={<JoinList session={session} />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
