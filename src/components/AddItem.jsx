@@ -43,6 +43,16 @@ export default function AddItem() {
     setAdding(null)
   }
 
+  const [collapsedCategories, setCollapsedCategories] = useState(new Set())
+
+  function toggleCategory(category) {
+    setCollapsedCategories(prev => {
+      const next = new Set(prev)
+      next.has(category) ? next.delete(category) : next.add(category)
+      return next
+    })
+  }
+
   const filtered = search.trim()
     ? catalog.filter(item =>
         item.name.toLowerCase().includes(search.toLowerCase())
@@ -78,33 +88,42 @@ export default function AddItem() {
       </div>
 
       {/* Catalog */}
-      {Object.entries(grouped).map(([category, items]) => (
-        <div key={category}>
-          <p className="px-4 pt-5 pb-1 text-xs font-semibold text-gray-400 uppercase tracking-wide">
-            {category}
-          </p>
-          <ul className="px-4 flex flex-col gap-1">
-            {items.map(item => {
-              const isAdded = addedIds.has(item.id)
-              const isAdding = adding === item.id
-              return (
-                <li
-                  key={item.id}
-                  onClick={() => !isAdded && addItem(item)}
-                  className={`flex items-center gap-3 bg-white rounded-xl px-4 py-3 shadow-sm transition-opacity ${isAdded ? 'opacity-40' : 'active:bg-gray-50'} ${isAdding ? 'opacity-50' : ''}`}
-                >
-                  <span className="text-xl">{item.icon}</span>
-                  <span className="flex-1 text-base">{item.name}</span>
-                  {isAdded
-                    ? <span className="text-primary text-sm font-semibold">✓</span>
-                    : <span className="text-gray-300 text-xl">+</span>
-                  }
-                </li>
-              )
-            })}
-          </ul>
-        </div>
-      ))}
+      {Object.entries(grouped).map(([category, items]) => {
+        const isCollapsed = collapsedCategories.has(category)
+        return (
+          <div key={category}>
+            <button
+              onClick={() => toggleCategory(category)}
+              className="w-full flex items-center justify-between px-7 pt-3 pb-1 cursor-pointer"
+            >
+              <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">{category}</span>
+              <span className="text-gray-400 text-xl">{isCollapsed ? '▸' : '▾'}</span>
+            </button>
+            {!isCollapsed && (
+              <ul className="px-4 flex flex-col gap-1">
+                {items.map(item => {
+                  const isAdded = addedIds.has(item.id)
+                  const isAdding = adding === item.id
+                  return (
+                    <li
+                      key={item.id}
+                      onClick={() => !isAdded && addItem(item)}
+                      className={`flex items-center gap-3 bg-white rounded-xl px-4 py-3 shadow-sm transition-opacity ${isAdded ? 'opacity-40 cursor-default' : 'active:bg-gray-50 cursor-pointer'} ${isAdding ? 'opacity-50' : ''}`}
+                    >
+                      <span className="text-xl">{item.icon}</span>
+                      <span className="flex-1 text-base">{item.name}</span>
+                      {isAdded
+                        ? <span className="text-primary text-sm font-semibold">✓</span>
+                        : <span className="text-gray-300 text-xl">+</span>
+                      }
+                    </li>
+                  )
+                })}
+              </ul>
+            )}
+          </div>
+        )
+      })}
 
       {filtered.length === 0 && (
         <p className="text-center text-gray-400 py-16">No items found for "{search}"</p>

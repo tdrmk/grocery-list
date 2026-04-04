@@ -58,12 +58,11 @@ export default function ListsView({ session }) {
   if (loading) return null
 
   return (
-    <div className="min-h-dvh bg-gray-50">
-      <div className="px-4 pt-8 pb-4">
-        <h1 className="text-2xl font-bold">My Lists</h1>
-      </div>
+    <div className="min-h-dvh bg-gray-50 flex flex-col">
+      {/* Scrollable content */}
+      <div className="flex-1 overflow-y-auto px-4 pt-8 pb-4">
+        <h1 className="text-2xl font-bold mb-4">My Lists</h1>
 
-      <div className="px-4">
         {lists.length === 0 && !creating && (
           <p className="text-gray-400 text-center py-16">No lists yet. Create one below!</p>
         )}
@@ -75,7 +74,7 @@ export default function ListsView({ session }) {
               className="flex items-center justify-between bg-white rounded-xl px-4 py-4 shadow-sm"
             >
               <span
-                className="flex-1 text-base font-medium"
+                className="flex-1 text-base font-medium cursor-pointer"
                 onClick={() => navigate(`/list/${list.id}`)}
               >
                 {list.name}
@@ -89,9 +88,12 @@ export default function ListsView({ session }) {
             </li>
           ))}
         </ul>
+      </div>
 
+      {/* Sticky footer */}
+      <div className="sticky bottom-0 bg-white border-t border-gray-100 px-4 py-4">
         {creating ? (
-          <form onSubmit={createList} className="mt-4 flex flex-col gap-3">
+          <form onSubmit={createList} className="flex flex-col gap-3">
             <input
               type="text"
               placeholder="List name"
@@ -101,6 +103,7 @@ export default function ListsView({ session }) {
               autoFocus
               className="w-full border border-gray-300 rounded-xl px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-primary"
             />
+            {error && <p className="text-red-500 text-sm text-center">{error}</p>}
             <div className="flex gap-2">
               <button
                 type="submit"
@@ -116,12 +119,11 @@ export default function ListsView({ session }) {
                 Cancel
               </button>
             </div>
-            {error && <p className="text-red-500 text-sm text-center">{error}</p>}
           </form>
         ) : (
           <button
             onClick={() => setCreating(true)}
-            className="mt-4 w-full bg-primary text-white font-semibold rounded-xl py-3 text-base"
+            className="w-full bg-primary text-white font-semibold rounded-xl py-3 text-base"
           >
             + New List
           </button>

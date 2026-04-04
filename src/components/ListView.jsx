@@ -90,7 +90,7 @@ export default function ListView({ session }) {
   const purchasedItems = items.filter(i => i.status === 'purchased')
 
   return (
-    <div className="min-h-dvh bg-gray-50">
+    <div className="min-h-dvh bg-gray-50 flex flex-col">
       {/* Header */}
       <div className="sticky top-0 bg-white border-b border-gray-100 z-10">
         <div className="flex items-center px-4 py-3 gap-3">
@@ -107,8 +107,61 @@ export default function ListView({ session }) {
         </div>
       </div>
 
-      {/* Add items button */}
-      <div className="px-4 pt-4 pb-2">
+      {/* Scrollable content */}
+      <div className="flex-1 overflow-y-auto px-4 py-4">
+        {/* Empty state */}
+        {activeItems.length === 0 && purchasedItems.length === 0 && (
+          <p className="text-center text-gray-400 py-16">No items yet.</p>
+        )}
+
+        {/* Active items */}
+        {activeItems.length > 0 && (
+          <ul className="flex flex-col gap-1">
+            {activeItems.map(item => (
+              <li
+                key={item.id}
+                onClick={() => togglePurchased(item)}
+                className="flex items-center gap-3 bg-white rounded-xl px-4 py-3 shadow-sm active:bg-gray-50 cursor-pointer"
+              >
+                <span className="text-xl">{item.icon}</span>
+                <span className="flex-1 text-base">{item.name}</span>
+                {item.quantity && <span className="text-sm text-gray-400">{item.quantity}</span>}
+              </li>
+            ))}
+          </ul>
+        )}
+
+        {/* Purchased items */}
+        {purchasedItems.length > 0 && (
+          <div className="mt-6">
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2 px-1">
+              Purchased
+            </p>
+            <ul className="flex flex-col gap-1">
+              {purchasedItems.map(item => (
+                <li
+                  key={item.id}
+                  onClick={() => togglePurchased(item)}
+                  className="flex items-center gap-3 bg-white rounded-xl px-4 py-3 shadow-sm opacity-50 active:bg-gray-50 cursor-pointer"
+                >
+                  <span className="text-xl">{item.icon}</span>
+                  <span className="flex-1 text-base line-through">{item.name}</span>
+                  <span className="text-green-500 text-sm">✓</span>
+                </li>
+              ))}
+            </ul>
+            <button
+              onClick={clearPurchased}
+              className="mt-3 w-full text-sm text-gray-400 py-2"
+            >
+              Clear purchased
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Sticky footer */}
+      <div className="sticky bottom-0 bg-white border-t border-gray-100 px-4 py-4">
         <button
           onClick={() => navigate(`/list/${id}/add`)}
           className="w-full bg-primary text-white font-semibold rounded-xl py-3 text-base"
@@ -116,58 +169,6 @@ export default function ListView({ session }) {
           + Add items
         </button>
       </div>
-
-      {/* Empty state */}
-      {activeItems.length === 0 && purchasedItems.length === 0 && (
-        <p className="text-center text-gray-400 py-16">No items yet.</p>
-      )}
-
-      {/* Active items */}
-      {activeItems.length > 0 && (
-        <ul className="px-4 flex flex-col gap-1 mt-2">
-          {activeItems.map(item => (
-            <li
-              key={item.id}
-              onClick={() => togglePurchased(item)}
-              className="flex items-center gap-3 bg-white rounded-xl px-4 py-3 shadow-sm active:bg-gray-50"
-            >
-              <span className="text-xl">{item.icon}</span>
-              <span className="flex-1 text-base">{item.name}</span>
-              {item.quantity && <span className="text-sm text-gray-400">{item.quantity}</span>}
-            </li>
-          ))}
-        </ul>
-      )}
-
-      {/* Purchased items */}
-      {purchasedItems.length > 0 && (
-        <div className="px-4 mt-6">
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2 px-1">
-            Purchased
-          </p>
-          <ul className="flex flex-col gap-1">
-            {purchasedItems.map(item => (
-              <li
-                key={item.id}
-                onClick={() => togglePurchased(item)}
-                className="flex items-center gap-3 bg-white rounded-xl px-4 py-3 shadow-sm opacity-50 active:bg-gray-50"
-              >
-                <span className="text-xl">{item.icon}</span>
-                <span className="flex-1 text-base line-through">{item.name}</span>
-                <span className="text-green-500 text-sm">✓</span>
-              </li>
-            ))}
-          </ul>
-          <button
-            onClick={clearPurchased}
-            className="mt-3 w-full text-sm text-gray-400 py-2"
-          >
-            Clear purchased
-          </button>
-        </div>
-      )}
-
-      <div className="h-8" />
     </div>
   )
 }
