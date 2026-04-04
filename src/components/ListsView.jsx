@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../supabaseClient'
+import IosInstallHint from './IosInstallHint'
 
 export default function ListsView({ session }) {
   const navigate = useNavigate()
@@ -89,6 +90,9 @@ export default function ListsView({ session }) {
           ))}
         </ul>
       </div>
+
+      {/* iOS install hint banner */}
+      <IosInstallHint />
 
       {/* Sticky footer */}
       <div className="sticky bottom-0 bg-white border-t border-gray-100 px-4 py-4">
