@@ -130,20 +130,9 @@ create policy "Creators can read their own share links"
   to authenticated
   using (created_by = (select auth.uid()));
 
-create policy "Users can read share links they claimed"
-  on share_links for select
-  to authenticated
-  using (claimed_by = (select auth.uid()));
-
 create policy "List members can create share links"
   on share_links for insert
   to authenticated
   with check (
     list_id in (select list_id from list_members where user_id = (select auth.uid()))
   );
-
-create policy "Authenticated users can claim share links"
-  on share_links for update
-  to authenticated
-  using (claimed_by is null)
-  with check (claimed_by = (select auth.uid()));
