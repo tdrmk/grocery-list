@@ -75,16 +75,20 @@ create policy "Users see members of their lists"
   to authenticated
   using (user_id = (select auth.uid()));
 
-create policy "Users can join lists via share link"
+create policy "List creator can add themselves as member"
   on list_members for insert
   to authenticated
   with check (
     user_id = (select auth.uid())
-    and (
-      list_id in (select id from lists where created_by = (select auth.uid()))
-      or
-      list_id in (select list_id from share_links where claimed_by = (select auth.uid()))
-    )
+    and list_id in (select id from lists where created_by = (select auth.uid()))
+  );
+
+create policy "Users can join via claimed share link"
+  on list_members for insert
+  to authenticated
+  with check (
+    user_id = (select auth.uid())
+    and list_id in (select list_id from share_links where claimed_by = (select auth.uid()))
   );
 
 -- ============================================================
