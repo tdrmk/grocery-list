@@ -7,20 +7,42 @@ alter table items       enable row level security;
 alter table share_links enable row level security;
 
 -- ============================================================
+-- Indexes
+-- Policy filter columns need indexes to avoid full table scans.
+-- ============================================================
+
+-- list_members is the join table for nearly every policy — both columns are hit
+create index if not exists idx_list_members_user_id on list_members(user_id);
+create index if not exists idx_list_members_list_id on list_members(list_id);
+
+-- items.list_id is the filter in the items policy subquery
+create index if not exists idx_items_list_id on items(list_id);
+
+-- catalog.created_by is the filter for custom catalog visibility
+create index if not exists idx_catalog_created_by on catalog(created_by);
+
+-- share_links.token is the unique claim lookup; list_id is used in INSERT policy
+create index if not exists idx_share_links_token   on share_links(token);
+create index if not exists idx_share_links_list_id on share_links(list_id);
+
+-- ============================================================
 -- Profiles
 -- ============================================================
 
 create policy "Profiles are viewable by authenticated users"
   on profiles for select
-  using (auth.role() = 'authenticated');
+  to authenticated
+  using (true);
 
 create policy "Users can create their own profile"
   on profiles for insert
-  with check (auth.uid() = id);
+  to authenticated
+  with check ((select auth.uid()) = id);
 
 create policy "Users can update their own profile"
   on profiles for update
-  using (auth.uid() = id);
+  to authenticated
+  using ((select auth.uid()) = id);
 
 -- ============================================================
 -- Lists
@@ -28,18 +50,21 @@ create policy "Users can update their own profile"
 
 create policy "Users see their lists"
   on lists for select
+  to authenticated
   using (
-    created_by = auth.uid()
-    or id in (select list_id from list_members where user_id = auth.uid())
+    created_by = (select auth.uid())
+    or id in (select list_id from list_members where user_id = (select auth.uid()))
   );
 
 create policy "Authenticated users can create lists"
   on lists for insert
-  with check (auth.role() = 'authenticated' and created_by = auth.uid());
+  to authenticated
+  with check (created_by = (select auth.uid()));
 
 create policy "Creator can delete list"
   on lists for delete
-  using (created_by = auth.uid());
+  to authenticated
+  using (created_by = (select auth.uid()));
 
 -- ============================================================
 -- List members
@@ -47,17 +72,18 @@ create policy "Creator can delete list"
 
 create policy "Users see members of their lists"
   on list_members for select
-  using (user_id = auth.uid());
+  to authenticated
+  using (user_id = (select auth.uid()));
 
 create policy "Users can join lists via share link"
   on list_members for insert
+  to authenticated
   with check (
-    auth.role() = 'authenticated'
-    and user_id = auth.uid()
+    user_id = (select auth.uid())
     and (
-      list_id in (select id from lists where created_by = auth.uid())
+      list_id in (select id from lists where created_by = (select auth.uid()))
       or
-      list_id in (select list_id from share_links where claimed_by = auth.uid())
+      list_id in (select list_id from share_links where claimed_by = (select auth.uid()))
     )
   );
 
@@ -67,15 +93,18 @@ create policy "Users can join lists via share link"
 
 create policy "Global catalog readable by authenticated users"
   on catalog for select
-  using (is_global = true and auth.role() = 'authenticated');
+  to authenticated
+  using (is_global = true);
 
 create policy "Custom catalog readable by authenticated users"
   on catalog for select
-  using (not is_global and auth.role() = 'authenticated');
+  to authenticated
+  using (not is_global);
 
 create policy "Users can add custom catalog items"
   on catalog for insert
-  with check (auth.role() = 'authenticated' and is_global = false);
+  to authenticated
+  with check (is_global = false);
 
 -- ============================================================
 -- Items
@@ -83,8 +112,9 @@ create policy "Users can add custom catalog items"
 
 create policy "Users manage items on their lists"
   on items for all
+  to authenticated
   using (
-    list_id in (select list_id from list_members where user_id = auth.uid())
+    list_id in (select list_id from list_members where user_id = (select auth.uid()))
   );
 
 -- ============================================================
@@ -93,18 +123,18 @@ create policy "Users manage items on their lists"
 
 create policy "Authenticated users can read share links"
   on share_links for select
-  using (
-    auth.role() = 'authenticated'
-    and (claimed_by is null or claimed_by = auth.uid())
-  );
+  to authenticated
+  using (claimed_by is null or claimed_by = (select auth.uid()));
 
 create policy "List members can create share links"
   on share_links for insert
+  to authenticated
   with check (
-    list_id in (select list_id from list_members where user_id = auth.uid())
+    list_id in (select list_id from list_members where user_id = (select auth.uid()))
   );
 
 create policy "Authenticated users can claim share links"
   on share_links for update
-  using (auth.role() = 'authenticated' and claimed_by is null)
-  with check (claimed_by = auth.uid());
+  to authenticated
+  using (claimed_by is null)
+  with check (claimed_by = (select auth.uid()));
