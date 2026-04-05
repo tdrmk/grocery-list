@@ -102,15 +102,15 @@ create policy "Global catalog readable by authenticated users"
   to authenticated
   using (is_global = true);
 
-create policy "Custom catalog readable by authenticated users"
+create policy "Custom catalog readable by creator"
   on catalog for select
   to authenticated
-  using (not is_global);
+  using (not is_global and created_by = (select auth.uid()));
 
 create policy "Users can add custom catalog items"
   on catalog for insert
   to authenticated
-  with check (is_global = false);
+  with check (is_global = false and created_by = (select auth.uid()));
 
 -- ============================================================
 -- Items

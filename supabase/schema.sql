@@ -31,7 +31,7 @@ create table catalog (
   category   text not null,
   icon       text not null,
   is_global  boolean not null default false,
-  created_by uuid references profiles (id) on delete set null,
+  created_by uuid references profiles (id) on delete set null default auth.uid(),
   created_at timestamptz not null default now()
 );
 
