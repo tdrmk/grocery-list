@@ -6,6 +6,7 @@ export default function AddItem() {
   const { id: listId } = useParams()
   const navigate = useNavigate()
   const [catalog, setCatalog] = useState([])
+  const [recentItems, setRecentItems] = useState([])
   const [addedIds, setAddedIds] = useState(new Set())
   const [search, setSearch] = useState('')
   const [adding, setAdding] = useState(null)
@@ -24,6 +25,21 @@ export default function AddItem() {
       .eq('status', 'active')
       .then(({ data }) => {
         setAddedIds(new Set((data ?? []).map(i => i.catalog_id).filter(Boolean)))
+      })
+
+    supabase
+      .from('items')
+      .select('name, icon, category, catalog_id')
+      .eq('list_id', listId)
+      .in('status', ['cleared', 'purchased'])
+      .then(({ data }) => {
+        const counts = {}
+        for (const item of data ?? []) {
+          const key = item.catalog_id ?? item.name
+          if (!counts[key]) counts[key] = { ...item, count: 0 }
+          counts[key].count++
+        }
+        setRecentItems(Object.values(counts).sort((a, b) => b.count - a.count))
       })
   }, [])
 
@@ -86,6 +102,45 @@ export default function AddItem() {
           />
         </div>
       </div>
+
+      {/* Recently purchased */}
+      {!search.trim() && recentItems.length > 0 && (() => {
+        const isCollapsed = collapsedCategories.has('__recent__')
+        return (
+          <div>
+            <button
+              onClick={() => toggleCategory('__recent__')}
+              className="w-full flex items-center justify-between px-7 pt-3 pb-1 cursor-pointer"
+            >
+              <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Recently purchased</span>
+              <span className="text-gray-400 text-xl">{isCollapsed ? '▸' : '▾'}</span>
+            </button>
+            {!isCollapsed && (
+              <ul className="px-4 flex flex-col gap-1">
+                {recentItems.map(item => {
+                  const isAdded = item.catalog_id ? addedIds.has(item.catalog_id) : false
+                  const isAdding = adding === item.catalog_id
+                  return (
+                    <li
+                      key={item.catalog_id ?? item.name}
+                      onClick={() => !isAdded && addItem({ id: item.catalog_id, ...item })}
+                      className={`flex items-center gap-3 bg-white rounded-xl px-4 py-3 shadow-sm transition-opacity ${isAdded ? 'opacity-40 cursor-default' : 'active:bg-gray-50 cursor-pointer'} ${isAdding ? 'opacity-50' : ''}`}
+                    >
+                      <span className="text-xl">{item.icon}</span>
+                      <span className="flex-1 text-base">{item.name}</span>
+                      {item.count > 1 && <span className="text-gray-300 text-sm">×{item.count}</span>}
+                      {isAdded
+                        ? <span className="text-primary text-sm font-semibold">✓</span>
+                        : <span className="text-gray-300 text-xl">+</span>
+                      }
+                    </li>
+                  )
+                })}
+              </ul>
+            )}
+          </div>
+        )
+      })()}
 
       {/* Catalog */}
       {Object.entries(grouped).map(([category, items]) => {
