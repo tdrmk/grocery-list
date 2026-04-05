@@ -39,6 +39,10 @@ export default function AddCustomItem() {
         .from('catalog')
         .update({ name: formatted, category, icon })
         .eq('id', existingItem.id)
+      await supabase
+        .from('items')
+        .update({ name: formatted, category, icon })
+        .eq('catalog_id', existingItem.id)
       navigate(-1)
     } else {
       const { data: catalogRow, error } = await supabase
