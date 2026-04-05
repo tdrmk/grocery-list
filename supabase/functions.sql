@@ -1,4 +1,23 @@
 -- ============================================================
+-- Private schema: unexposed RLS helper functions
+-- Not accessible via the API, only callable from policies.
+-- ============================================================
+
+create schema if not exists private;
+
+-- Returns the list IDs the current user belongs to.
+-- security definer bypasses RLS on list_members, preventing
+-- infinite recursion in the list_members SELECT policy.
+create function private.get_my_list_ids()
+returns setof uuid
+language sql
+security definer
+set search_path = ''
+as $$
+  select list_id from public.list_members where user_id = (select auth.uid())
+$$;
+
+-- ============================================================
 -- claim_share_link
 -- Atomically claims a share link and joins the list.
 -- Handles graceful navigation for members/creators (no claim consumed).

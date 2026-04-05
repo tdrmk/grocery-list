@@ -73,7 +73,9 @@ create policy "Creator can delete list"
 create policy "Users see members of their lists"
   on list_members for select
   to authenticated
-  using (user_id = (select auth.uid()));
+  using (
+    list_id in (select private.get_my_list_ids())
+  );
 
 create policy "List creator can add themselves as member"
   on list_members for insert
