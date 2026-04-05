@@ -127,12 +127,26 @@ create policy "Users can delete their custom catalog items"
 -- Items
 -- ============================================================
 
-create policy "Users manage items on their lists"
-  on items for all
+create policy "Users can select items on their lists"
+  on items for select
   to authenticated
-  using (
-    list_id in (select list_id from list_members where user_id = (select auth.uid()))
-  );
+  using (list_id in (select list_id from list_members where user_id = (select auth.uid())));
+
+create policy "Users can insert items on their lists"
+  on items for insert
+  to authenticated
+  with check (list_id in (select list_id from list_members where user_id = (select auth.uid())));
+
+create policy "Users can update items on their lists"
+  on items for update
+  to authenticated
+  using (list_id in (select list_id from list_members where user_id = (select auth.uid())))
+  with check (list_id in (select list_id from list_members where user_id = (select auth.uid())));
+
+create policy "Users can delete items on their lists"
+  on items for delete
+  to authenticated
+  using (list_id in (select list_id from list_members where user_id = (select auth.uid())));
 
 -- ============================================================
 -- Share links
