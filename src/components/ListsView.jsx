@@ -18,7 +18,7 @@ export default function ListsView({ session }) {
   async function fetchLists() {
     const { data } = await supabase
       .from('lists')
-      .select('id, name, created_at')
+      .select('id, name, created_at, list_members(user_id, profiles(name))')
       .order('created_at', { ascending: false })
 
     setLists(data ?? [])
@@ -74,12 +74,20 @@ export default function ListsView({ session }) {
               key={list.id}
               className="flex items-center justify-between bg-white rounded-xl px-4 py-4 shadow-sm"
             >
-              <span
-                className="flex-1 text-base font-medium cursor-pointer"
+              <div
+                className="flex-1 cursor-pointer"
                 onClick={() => navigate(`/list/${list.id}`)}
               >
-                {list.name}
-              </span>
+                <p className="text-base font-medium">{list.name}</p>
+                {list.list_members?.length > 1 && (
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    {list.list_members
+                      .map(m => m.user_id === session.user.id ? 'You' : m.profiles?.name)
+                      .filter(Boolean)
+                      .join(', ')}
+                  </p>
+                )}
+              </div>
               <button
                 onClick={() => deleteList(list)}
                 className="text-sm text-red-400 ml-4"

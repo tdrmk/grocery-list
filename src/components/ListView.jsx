@@ -7,6 +7,7 @@ export default function ListView({ session }) {
   const { id } = useParams()
   const navigate = useNavigate()
   const [list, setList] = useState(null)
+  const [members, setMembers] = useState([])
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
   const [copied, setCopied] = useState(false)
@@ -27,6 +28,7 @@ export default function ListView({ session }) {
   useEffect(() => {
     fetchList()
     fetchItems()
+    fetchMembers()
     autoClearStale()
 
     const channel = supabase
@@ -60,6 +62,14 @@ export default function ListView({ session }) {
       .order('added_at', { ascending: false })
 
     setItems(data ?? [])
+  }
+
+  async function fetchMembers() {
+    const { data } = await supabase
+      .from('list_members')
+      .select('user_id, profiles(name)')
+      .eq('list_id', id)
+    setMembers(data ?? [])
   }
 
   async function togglePurchased(item) {
@@ -141,7 +151,17 @@ export default function ListView({ session }) {
           <button onClick={() => navigate('/')} className="text-primary font-medium text-sm">
             ← Back
           </button>
-          <h1 className="flex-1 text-center font-bold text-lg truncate">{list.name}</h1>
+          <div className="flex-1 flex flex-col items-center">
+            <h1 className="font-bold text-lg truncate">{list.name}</h1>
+            {members.length > 1 && (
+              <p className="text-xs text-gray-400">
+                {members
+                  .map(m => m.user_id === session.user.id ? 'You' : m.profiles?.name)
+                  .filter(Boolean)
+                  .join(', ')}
+              </p>
+            )}
+          </div>
           <button
             onClick={shareList}
             className="text-sm text-primary font-medium"
