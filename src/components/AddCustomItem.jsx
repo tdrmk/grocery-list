@@ -21,33 +21,53 @@ export default function AddCustomItem() {
   const navigate = useNavigate()
   const location = useLocation()
 
-  const [name, setName] = useState(location.state?.defaultName ?? '')
-  const [category, setCategory] = useState('Custom')
-  const [icon, setIcon] = useState(ICONS[0])
+  const existingItem = location.state?.existingItem ?? null
+
+  const [name, setName] = useState(existingItem?.name ?? location.state?.defaultName ?? '')
+  const [category, setCategory] = useState(existingItem?.category ?? 'Custom')
+  const [icon, setIcon] = useState(existingItem?.icon ?? ICONS[0])
   const [saving, setSaving] = useState(false)
 
   async function save() {
     if (!name.trim()) return
     setSaving(true)
 
-    const { data: catalogRow, error } = await supabase
-      .from('catalog')
-      .insert({ name: name.trim().replace(/\b\w/g, c => c.toUpperCase()), category, icon })
-      .select()
-      .single()
+    const formatted = name.trim().replace(/\b\w/g, c => c.toUpperCase())
 
-    if (error || !catalogRow) { setSaving(false); return }
+    if (existingItem) {
+      await supabase
+        .from('catalog')
+        .update({ name: formatted, category, icon })
+        .eq('id', existingItem.id)
+      navigate(-1)
+    } else {
+      const { data: catalogRow, error } = await supabase
+        .from('catalog')
+        .insert({ name: formatted, category, icon })
+        .select()
+        .single()
 
-    await supabase.from('items').insert({
-      list_id: listId,
-      catalog_id: catalogRow.id,
-      name: catalogRow.name,
-      category: catalogRow.category,
-      icon: catalogRow.icon,
-      status: 'active',
-    })
+      if (error || !catalogRow) { setSaving(false); return }
 
-    navigate(`/list/${listId}/add`, { replace: true })
+      await supabase.from('items').insert({
+        list_id: listId,
+        catalog_id: catalogRow.id,
+        name: catalogRow.name,
+        category: catalogRow.category,
+        icon: catalogRow.icon,
+        status: 'active',
+      })
+
+      navigate(`/list/${listId}/add`, { replace: true })
+    }
+
+    setSaving(false)
+  }
+
+  async function deleteItem() {
+    if (!window.confirm('Delete this item from your catalog?')) return
+    await supabase.from('catalog').delete().eq('id', existingItem.id)
+    navigate(-1)
   }
 
   return (
@@ -61,7 +81,9 @@ export default function AddCustomItem() {
           >
             ← Back
           </button>
-          <h1 className="flex-1 text-center font-semibold text-base">New item</h1>
+          <h1 className="flex-1 text-center font-semibold text-base">
+            {existingItem ? 'Edit item' : 'New item'}
+          </h1>
           <div className="w-10" />
         </div>
       </div>
@@ -116,8 +138,8 @@ export default function AddCustomItem() {
         </div>
       </div>
 
-      {/* Save */}
-      <div className="sticky bottom-0 bg-white border-t border-gray-100 px-4 py-4">
+      {/* Footer */}
+      <div className="sticky bottom-0 bg-white border-t border-gray-100 px-4 py-4 flex flex-col gap-2">
         <button
           onClick={save}
           disabled={!name.trim() || saving}
@@ -125,6 +147,14 @@ export default function AddCustomItem() {
         >
           {saving ? 'Saving…' : 'Save'}
         </button>
+        {existingItem && (
+          <button
+            onClick={deleteItem}
+            className="w-full text-red-500 font-medium py-2 text-base"
+          >
+            Delete
+          </button>
+        )}
       </div>
     </div>
   )

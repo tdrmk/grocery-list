@@ -112,6 +112,17 @@ create policy "Users can add custom catalog items"
   to authenticated
   with check (is_global = false and created_by = (select auth.uid()));
 
+create policy "Users can update their custom catalog items"
+  on catalog for update
+  to authenticated
+  using (not is_global and created_by = (select auth.uid()))
+  with check (not is_global and created_by = (select auth.uid()));
+
+create policy "Users can delete their custom catalog items"
+  on catalog for delete
+  to authenticated
+  using (not is_global and created_by = (select auth.uid()));
+
 -- ============================================================
 -- Items
 -- ============================================================

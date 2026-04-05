@@ -173,6 +173,14 @@ export default function AddItem() {
                     >
                       <span className="text-xl">{item.icon}</span>
                       <span className="flex-1 text-base">{item.name}</span>
+                      {!item.is_global && (
+                        <button
+                          onClick={e => { e.stopPropagation(); navigate(`/list/${listId}/add/custom`, { state: { existingItem: item } }) }}
+                          className="text-gray-300 text-base px-1"
+                        >
+                          ✏️
+                        </button>
+                      )}
                       {isAdded
                         ? <span className="text-primary text-sm font-semibold">✓</span>
                         : <span className="text-gray-300 text-xl">+</span>
