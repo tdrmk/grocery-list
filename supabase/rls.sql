@@ -125,10 +125,15 @@ create policy "Users manage items on their lists"
 -- Share links
 -- ============================================================
 
-create policy "Authenticated users can read share links"
+create policy "Creators can read their own share links"
   on share_links for select
   to authenticated
-  using (created_by = (select auth.uid()) or claimed_by = (select auth.uid()));
+  using (created_by = (select auth.uid()));
+
+create policy "Users can read share links they claimed"
+  on share_links for select
+  to authenticated
+  using (claimed_by = (select auth.uid()));
 
 create policy "List members can create share links"
   on share_links for insert
