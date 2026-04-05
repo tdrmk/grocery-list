@@ -100,6 +100,12 @@ export default function AddItem() {
             autoFocus
             className="flex-1 bg-gray-100 rounded-xl px-4 py-2 text-base focus:outline-none"
           />
+          <button
+            onClick={() => navigate(`/list/${listId}/add/custom`, { state: { defaultName: search.trim() } })}
+            className="text-primary font-bold text-2xl shrink-0 leading-none"
+          >
+            +
+          </button>
         </div>
       </div>
 
@@ -180,8 +186,17 @@ export default function AddItem() {
         )
       })}
 
-      {filtered.length === 0 && (
-        <p className="text-center text-gray-400 py-16">No items found for "{search}"</p>
+      {filtered.length === 0 && search.trim() && (
+        <div className="px-4 pt-4">
+          <button
+            onClick={() => navigate(`/list/${listId}/add/custom`, { state: { defaultName: search.trim() } })}
+            className="w-full flex items-center gap-3 bg-white rounded-xl px-4 py-3 shadow-sm active:bg-gray-50 text-left"
+          >
+            <span className="text-xl">🛒</span>
+            <span className="flex-1 text-base text-gray-700">Add "{search.trim()}" as custom item</span>
+            <span className="text-gray-300 text-xl">+</span>
+          </button>
+        </div>
       )}
 
       <div className="h-8" />
