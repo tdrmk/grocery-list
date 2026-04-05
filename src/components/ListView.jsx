@@ -19,9 +19,15 @@ export default function ListView({ session }) {
     onDoubleClick: (item) => openEdit(item),
   })
 
+  const handlePurchasedClick = useClickIntent({
+    onSingleClick: (item) => togglePurchased(item),
+    onDoubleClick: (item) => clearItem(item),
+  })
+
   useEffect(() => {
     fetchList()
     fetchItems()
+    autoClearStale()
 
     const channel = supabase
       .channel(`list-items-${id}`)
@@ -64,6 +70,21 @@ export default function ListView({ session }) {
     }
 
     await supabase.from('items').update(updates).eq('id', item.id)
+  }
+
+  async function clearItem(item) {
+    await supabase.from('items').update({ status: 'cleared' }).eq('id', item.id)
+  }
+
+  async function autoClearStale() {
+    const startOfToday = new Date()
+    startOfToday.setHours(0, 0, 0, 0)
+    await supabase
+      .from('items')
+      .update({ status: 'cleared' })
+      .eq('list_id', id)
+      .eq('status', 'purchased')
+      .lt('purchased_at', startOfToday.toISOString())
   }
 
   async function clearPurchased() {
@@ -165,7 +186,7 @@ export default function ListView({ session }) {
               {purchasedItems.map(item => (
                 <li
                   key={item.id}
-                  onClick={() => togglePurchased(item)}
+                  onClick={() => handlePurchasedClick(item)}
                   className="flex items-center gap-3 bg-white rounded-xl px-4 py-3 shadow-sm opacity-50 active:bg-gray-50 cursor-pointer select-none"
                 >
                   <span className="text-xl">{item.icon}</span>
