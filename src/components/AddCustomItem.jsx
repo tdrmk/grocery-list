@@ -4,8 +4,9 @@ import { supabase } from '../supabaseClient'
 
 const CATEGORIES = [
   'Produce', 'Dairy & Eggs', 'Bakery', 'Meat & Seafood',
-  'Frozen', 'Pantry & Dry Goods', 'Spices & Masalas',
-  'Snacks', 'Beverages', 'Household & Cleaning', 'Personal Care', 'Custom'
+  'Frozen', 'Grains & Flours', 'Dals & Pulses', 'Pantry & Dry Goods',
+  'Spices & Masalas', 'Nuts & Dry Fruits', 'Snacks', 'Beverages',
+  'Household & Cleaning', 'Personal Care', 'Custom'
 ]
 
 const ICONS = [
