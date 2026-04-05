@@ -136,5 +136,6 @@ create policy "List members can create share links"
   on share_links for insert
   to authenticated
   with check (
-    list_id in (select list_id from list_members where user_id = (select auth.uid()))
+    created_by = (select auth.uid())
+    and list_id in (select list_id from list_members where user_id = (select auth.uid()))
   );

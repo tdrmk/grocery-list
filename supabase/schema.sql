@@ -54,7 +54,7 @@ create table items (
 create table share_links (
   id         uuid primary key default gen_random_uuid(),
   list_id    uuid not null references lists (id) on delete cascade,
-  created_by uuid not null references profiles (id) on delete cascade,
+  created_by uuid not null references profiles (id) on delete cascade default auth.uid(),
   token      text not null unique default gen_random_uuid()::text,
   claimed_by uuid references profiles (id),
   created_at timestamptz not null default now()

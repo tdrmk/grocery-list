@@ -108,7 +108,7 @@ export default function ListView({ session }) {
   async function shareList() {
     const { data } = await supabase
       .from('share_links')
-      .insert({ list_id: id, created_by: session.user.id })
+      .insert({ list_id: id })
       .select('token')
       .single()
     const url = `${window.location.origin}/join/${data.token}`
