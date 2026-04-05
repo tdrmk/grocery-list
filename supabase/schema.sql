@@ -57,5 +57,6 @@ create table share_links (
   created_by uuid not null references profiles (id) on delete cascade default auth.uid(),
   token      text not null unique default gen_random_uuid()::text,
   claimed_by uuid references profiles (id),
+  expires_at timestamptz not null default now() + interval '1 day',
   created_at timestamptz not null default now()
 );

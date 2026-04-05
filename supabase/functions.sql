@@ -40,13 +40,17 @@ begin
   end if;
 
   -- Find share link by token (security definer bypasses RLS)
-  select id, list_id, claimed_by
+  select id, list_id, claimed_by, expires_at
   from public.share_links
   where token = p_token
   into v_link;
 
   if not found then
     raise exception 'invalid_token' using hint = 'Link is invalid or already used';
+  end if;
+
+  if v_link.expires_at < now() then
+    raise exception 'invalid_token' using hint = 'Link has expired';
   end if;
 
   -- Already a list member (creator, previous join, re-click) → navigate without touching the link
