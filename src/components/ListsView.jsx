@@ -16,12 +16,23 @@ export default function ListsView({ session }) {
   }, [])
 
   async function fetchLists() {
-    const { data } = await supabase
-      .from('lists')
-      .select('id, name, created_at, list_members(user_id, profiles(name))')
-      .order('created_at', { ascending: false })
+    const [{ data: listsData }, { data: itemCounts }] = await Promise.all([
+      supabase
+        .from('lists')
+        .select('id, name, created_at, list_members(user_id, profiles(name))')
+        .order('created_at', { ascending: false }),
+      supabase
+        .from('items')
+        .select('list_id')
+        .eq('status', 'active'),
+    ])
 
-    setLists(data ?? [])
+    const countByList = {}
+    for (const item of itemCounts ?? []) {
+      countByList[item.list_id] = (countByList[item.list_id] ?? 0) + 1
+    }
+
+    setLists((listsData ?? []).map(l => ({ ...l, activeCount: countByList[l.id] ?? 0 })))
     setLoading(false)
   }
 
@@ -86,6 +97,9 @@ export default function ListsView({ session }) {
                       .filter(Boolean)
                       .join(', ')}
                   </p>
+                )}
+                {list.activeCount > 0 && (
+                  <p className="text-xs text-gray-400 mt-0.5">{list.activeCount} item{list.activeCount !== 1 ? 's' : ''}</p>
                 )}
               </div>
               <button
