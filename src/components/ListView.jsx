@@ -67,12 +67,18 @@ export default function ListView({ session }) {
       status: newStatus,
       purchased_at: newStatus === 'purchased' ? new Date().toISOString() : null
     }
-
     await supabase.from('items').update(updates).eq('id', item.id)
+    fetchItems()
   }
 
   async function clearItem(item) {
     await supabase.from('items').update({ status: 'cleared' }).eq('id', item.id)
+    fetchItems()
+  }
+
+  async function deleteItem(item) {
+    await supabase.from('items').delete().eq('id', item.id)
+    fetchItems()
   }
 
   async function autoClearStale() {
@@ -92,6 +98,7 @@ export default function ListView({ session }) {
       .update({ status: 'cleared' })
       .eq('list_id', id)
       .eq('status', 'purchased')
+    fetchItems()
   }
 
   async function shareList() {
@@ -185,6 +192,12 @@ export default function ListView({ session }) {
                   className="text-base px-1 shrink-0"
                 >
                   ✏️
+                </button>
+                <button
+                  onClick={e => { e.stopPropagation(); deleteItem(item) }}
+                  className="text-gray-300 text-base px-1 shrink-0"
+                >
+                  🗑️
                 </button>
               </li>
             ))}
