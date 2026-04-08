@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../supabaseClient'
 import { useToast } from './commons/Toast'
+import SwipeableRow from './commons/SwipeableRow'
 
 export default function AddItem() {
   const { id: listId } = useParams()
@@ -216,27 +217,26 @@ export default function AddItem() {
                   const isPurchased = purchasedIds.has(item.id)
                   const isAdding = adding === item.id
                   return (
-                    <li
-                      key={item.id}
-                      onClick={() => !isAdded && !isPurchased && addItem(item)}
-                      className={`flex items-center gap-3 rounded-xl px-4 py-3 shadow-sm transition-colors ${isAdded ? 'bg-rose-50 cursor-default' : isPurchased ? 'bg-green-50 cursor-default' : 'bg-gray-50 active:bg-gray-100 cursor-pointer'} ${isAdding ? 'opacity-50' : ''}`}
-                    >
-                      <span className="text-xl">{item.icon}</span>
-                      <span className="flex-1 text-base">{item.name}</span>
-                      <button
-                        onClick={e => { e.stopPropagation(); navigate(`/list/${listId}/add/custom`, { state: { existingItem: item } }) }}
-                        className="text-gray-300 text-base px-1"
+                    <li key={item.id} className="rounded-xl overflow-hidden shadow-sm">
+                      <SwipeableRow
+                        onClick={() => !isAdded && !isPurchased && addItem(item)}
+                        actions={[
+                          { icon: '✏️', label: 'Edit', color: 'bg-blue-500', onAction: () => navigate(`/list/${listId}/add/custom`, { state: { existingItem: item } }) },
+                        ]}
                       >
-                        ✏️
-                      </button>
-                      <div className="w-5 h-5 flex items-center justify-center shrink-0">
-                        {isAdded
-                          ? <span className="text-sm">🛒</span>
-                          : isPurchased
-                          ? <span className="text-primary text-sm font-semibold">✓</span>
-                          : <span className="text-gray-300 text-xl">+</span>
-                        }
-                      </div>
+                        <div className={`flex items-center gap-3 px-4 py-3 transition-colors ${isAdded ? 'bg-rose-50' : isPurchased ? 'bg-green-50' : 'bg-gray-50 active:bg-gray-100'} ${isAdding ? 'opacity-50' : ''}`}>
+                          <span className="text-xl">{item.icon}</span>
+                          <span className="flex-1 text-base">{item.name}</span>
+                          <div className="w-5 h-5 flex items-center justify-center shrink-0">
+                            {isAdded
+                              ? <span className="text-sm">🛒</span>
+                              : isPurchased
+                              ? <span className="text-primary text-sm font-semibold">✓</span>
+                              : <span className="text-gray-300 text-xl">+</span>
+                            }
+                          </div>
+                        </div>
+                      </SwipeableRow>
                     </li>
                   )
                 })}
