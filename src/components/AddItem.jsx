@@ -70,7 +70,10 @@ export default function AddItem() {
       )
     : catalog
 
-  const grouped = filtered.reduce((acc, item) => {
+  const filteredGlobal = filtered.filter(item => item.is_global)
+  const filteredOwn = filtered.filter(item => !item.is_global)
+
+  const grouped = filteredGlobal.reduce((acc, item) => {
     if (!acc[item.category]) acc[item.category] = []
     acc[item.category].push(item)
     return acc
@@ -174,14 +177,6 @@ export default function AddItem() {
                     >
                       <span className="text-xl">{item.icon}</span>
                       <span className="flex-1 text-base">{item.name}</span>
-                      {!item.is_global && (
-                        <button
-                          onClick={e => { e.stopPropagation(); navigate(`/list/${listId}/add/custom`, { state: { existingItem: item } }) }}
-                          className="text-gray-300 text-base px-1"
-                        >
-                          ✏️
-                        </button>
-                      )}
                       <div className="w-5 h-5 flex items-center justify-center shrink-0">
                         {isAdded
                           ? <span className="text-sm">🛒</span>
@@ -198,6 +193,55 @@ export default function AddItem() {
           </div>
         )
       })}
+
+      {/* My items */}
+      {filteredOwn.length > 0 && (() => {
+        const isCollapsed = collapsedCategories.has('__own__')
+        return (
+          <div>
+            <button
+              onClick={() => toggleCategory('__own__')}
+              className="w-full flex items-center justify-between px-7 pt-3 pb-1 cursor-pointer"
+            >
+              <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">My items</span>
+              <span className="text-gray-400 text-xl">{isCollapsed ? '▸' : '▾'}</span>
+            </button>
+            {!isCollapsed && (
+              <ul className="px-4 flex flex-col gap-1">
+                {filteredOwn.map(item => {
+                  const isAdded = addedIds.has(item.id)
+                  const isPurchased = purchasedIds.has(item.id)
+                  const isAdding = adding === item.id
+                  return (
+                    <li
+                      key={item.id}
+                      onClick={() => !isAdded && !isPurchased && addItem(item)}
+                      className={`flex items-center gap-3 rounded-xl px-4 py-3 shadow-sm transition-colors ${isAdded ? 'bg-rose-50 cursor-default' : isPurchased ? 'bg-green-50 cursor-default' : 'bg-gray-50 active:bg-gray-100 cursor-pointer'} ${isAdding ? 'opacity-50' : ''}`}
+                    >
+                      <span className="text-xl">{item.icon}</span>
+                      <span className="flex-1 text-base">{item.name}</span>
+                      <button
+                        onClick={e => { e.stopPropagation(); navigate(`/list/${listId}/add/custom`, { state: { existingItem: item } }) }}
+                        className="text-gray-300 text-base px-1"
+                      >
+                        ✏️
+                      </button>
+                      <div className="w-5 h-5 flex items-center justify-center shrink-0">
+                        {isAdded
+                          ? <span className="text-sm">🛒</span>
+                          : isPurchased
+                          ? <span className="text-primary text-sm font-semibold">✓</span>
+                          : <span className="text-gray-300 text-xl">+</span>
+                        }
+                      </div>
+                    </li>
+                  )
+                })}
+              </ul>
+            )}
+          </div>
+        )
+      })()}
 
       {filtered.length === 0 && search.trim() && (
         <div className="px-4 pt-4">
