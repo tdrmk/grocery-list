@@ -24,7 +24,7 @@ export default function ListsView({ session }) {
     const [{ data: listsData }, { data: itemsData }] = await Promise.all([
       supabase
         .from('lists')
-        .select('id, name, created_at, list_members(user_id, profiles(name))')
+        .select('id, name, created_at, created_by, list_members(user_id, profiles(name))')
         .order('created_at', { ascending: false }),
       supabase
         .from('items')
@@ -105,12 +105,14 @@ export default function ListsView({ session }) {
                   : <p className="text-xs text-gray-400 mt-2 ml-1">No items</p>
                 }
               </div>
-              <button
-                onClick={() => setConfirmDelete(list)}
-                className="text-sm text-red-400 ml-4"
-              >
-                Delete
-              </button>
+              {list.created_by === session.user.id && (
+                <button
+                  onClick={() => setConfirmDelete(list)}
+                  className="text-sm text-red-400 ml-4"
+                >
+                  Delete
+                </button>
+              )}
             </li>
           ))}
         </ul>
