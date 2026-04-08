@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../supabaseClient'
 import IosInstallHint from './IosInstallHint'
+import { AvatarGroup } from './commons/Avatar'
+import EmojiGroup from './commons/EmojiGroup'
 
 export default function ListsView({ session }) {
   const navigate = useNavigate()
@@ -16,23 +18,24 @@ export default function ListsView({ session }) {
   }, [])
 
   async function fetchLists() {
-    const [{ data: listsData }, { data: itemCounts }] = await Promise.all([
+    const [{ data: listsData }, { data: itemsData }] = await Promise.all([
       supabase
         .from('lists')
         .select('id, name, created_at, list_members(user_id, profiles(name))')
         .order('created_at', { ascending: false }),
       supabase
         .from('items')
-        .select('list_id')
+        .select('list_id, icon')
         .eq('status', 'active'),
     ])
 
-    const countByList = {}
-    for (const item of itemCounts ?? []) {
-      countByList[item.list_id] = (countByList[item.list_id] ?? 0) + 1
+    const iconsByList = {}
+    for (const item of itemsData ?? []) {
+      if (!iconsByList[item.list_id]) iconsByList[item.list_id] = []
+      iconsByList[item.list_id].push(item.icon)
     }
 
-    setLists((listsData ?? []).map(l => ({ ...l, activeCount: countByList[l.id] ?? 0 })))
+    setLists((listsData ?? []).map(l => ({ ...l, activeIcons: iconsByList[l.id] ?? [] })))
     setLoading(false)
   }
 
@@ -83,24 +86,21 @@ export default function ListsView({ session }) {
           {lists.map(list => (
             <li
               key={list.id}
-              className="flex items-center justify-between bg-white rounded-xl px-4 py-4 shadow-sm"
+              className="flex items-center justify-between bg-white rounded-xl px-4 py-3 shadow-sm"
             >
               <div
                 className="flex-1 cursor-pointer"
                 onClick={() => navigate(`/list/${list.id}`)}
               >
-                <p className="text-base font-medium">{list.name}</p>
-                {list.list_members?.length > 1 && (
-                  <p className="text-xs text-gray-400 mt-0.5">
-                    {list.list_members
-                      .map(m => m.user_id === session.user.id ? 'You' : m.profiles?.name)
-                      .filter(Boolean)
-                      .join(', ')}
-                  </p>
-                )}
-                {list.activeCount > 0 && (
-                  <p className="text-xs text-gray-400 mt-0.5">{list.activeCount} item{list.activeCount !== 1 ? 's' : ''}</p>
-                )}
+                <p className="text-lg font-medium">{list.name}</p>
+                <AvatarGroup members={(list.list_members ?? []).map(m => ({
+                  userId: m.user_id,
+                  name: m.profiles?.name ?? '?',
+                }))} />
+                {list.activeIcons?.length > 0
+                  ? <EmojiGroup icons={list.activeIcons} className="mt-2" />
+                  : <p className="text-xs text-gray-400 mt-2 ml-1">No items</p>
+                }
               </div>
               <button
                 onClick={() => deleteList(list)}

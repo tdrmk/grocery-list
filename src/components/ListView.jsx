@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../supabaseClient'
+import { AvatarGroup } from './commons/Avatar'
 
 export default function ListView({ session }) {
   const { id } = useParams()
@@ -149,13 +150,8 @@ export default function ListView({ session }) {
           </button>
           <div className="flex-1 flex flex-col items-center">
             <h1 className="font-bold text-lg truncate">{list.name}</h1>
-            {members.length > 1 && (
-              <p className="text-xs text-gray-400">
-                {members
-                  .map(m => m.user_id === session.user.id ? 'You' : m.profiles?.name)
-                  .filter(Boolean)
-                  .join(', ')}
-              </p>
+            {members.length > 0 && (
+              <AvatarGroup members={members.map(m => ({ userId: m.user_id, name: m.profiles?.name ?? '?' }))} />
             )}
           </div>
           <button
