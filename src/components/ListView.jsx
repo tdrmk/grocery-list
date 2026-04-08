@@ -5,6 +5,7 @@ import { AvatarGroup } from './commons/Avatar'
 import Avatar from './commons/Avatar'
 import BottomSheet from './commons/BottomSheet'
 import { useToast } from './commons/Toast'
+import SwipeableRow from './commons/SwipeableRow'
 
 export default function ListView({ session }) {
   const { id } = useParams()
@@ -198,27 +199,21 @@ export default function ListView({ session }) {
                 <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide px-1 mb-1">{category}</p>
                 <ul className="flex flex-col gap-1">
                   {categoryItems.map(item => (
-                    <li
-                      key={item.id}
-                      onClick={() => togglePurchased(item)}
-                      className="flex items-center gap-3 bg-white rounded-xl px-4 py-3 shadow-sm active:bg-gray-50 cursor-pointer select-none"
-                    >
-                      <span className="text-xl">{item.icon}</span>
-                      <span className="flex-1 text-base">{item.name}</span>
-                      {item.quantity && <span className="text-sm text-gray-400">{item.quantity}</span>}
-                      {item.notes && <span className="text-sm text-gray-300 italic">{item.notes}</span>}
-                      <button
-                        onClick={e => { e.stopPropagation(); openEdit(item) }}
-                        className="text-base px-1 shrink-0"
+                    <li key={item.id} className="rounded-xl overflow-hidden bg-white shadow-sm">
+                      <SwipeableRow
+                        actions={[
+                          { icon: '✏️', label: 'Edit', color: 'bg-blue-400', onAction: () => openEdit(item) },
+                          { icon: '🗑️', label: 'Delete', color: 'bg-red-400', onAction: () => deleteItem(item) },
+                        ]}
+                        onClick={() => togglePurchased(item)}
                       >
-                        ✏️
-                      </button>
-                      <button
-                        onClick={e => { e.stopPropagation(); deleteItem(item) }}
-                        className="text-gray-300 text-base px-1 shrink-0"
-                      >
-                        🗑️
-                      </button>
+                        <div className="flex items-center gap-3 px-4 py-3 active:bg-gray-50 cursor-pointer select-none">
+                          <span className="text-xl">{item.icon}</span>
+                          <span className="flex-1 text-base">{item.name}</span>
+                          {item.quantity && <span className="text-sm text-gray-400">{item.quantity}</span>}
+                          {item.notes && <span className="text-sm text-gray-300 italic">{item.notes}</span>}
+                        </div>
+                      </SwipeableRow>
                     </li>
                   ))}
                 </ul>
@@ -237,19 +232,18 @@ export default function ListView({ session }) {
             </div>
             <ul className="flex flex-col gap-1">
               {purchasedItems.map(item => (
-                <li
-                  key={item.id}
-                  onClick={() => togglePurchased(item)}
-                  className="flex items-center gap-3 bg-white rounded-xl px-4 py-3 shadow-sm opacity-40 active:bg-gray-50 cursor-pointer select-none"
-                >
-                  <span className="text-xl">{item.icon}</span>
-                  <span className="flex-1 text-base">{item.name}</span>
-                  <button
-                    onClick={e => { e.stopPropagation(); clearItem(item) }}
-                    className="text-gray-400 text-base px-1 shrink-0"
+                <li key={item.id} className="rounded-xl overflow-hidden bg-white shadow-sm opacity-40">
+                  <SwipeableRow
+                    actions={[
+                      { icon: '✕', label: 'Clear', color: 'bg-gray-400', onAction: () => clearItem(item) },
+                    ]}
+                    onClick={() => togglePurchased(item)}
                   >
-                    ✕
-                  </button>
+                    <div className="flex items-center gap-3 px-4 py-3 active:bg-gray-50 cursor-pointer select-none">
+                      <span className="text-xl">{item.icon}</span>
+                      <span className="flex-1 text-base">{item.name}</span>
+                    </div>
+                  </SwipeableRow>
                 </li>
               ))}
             </ul>
