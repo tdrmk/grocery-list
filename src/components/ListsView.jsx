@@ -7,6 +7,16 @@ import { AvatarGroup } from './commons/Avatar'
 import EmojiGroup from './commons/EmojiGroup'
 import BottomSheet from './commons/BottomSheet'
 import { useToast } from './commons/Toast'
+import SettingsDrawer from './SettingsDrawer'
+
+function SettingsIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="3"/>
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+    </svg>
+  )
+}
 
 export default function ListsView({ session }) {
   const navigate = useNavigate()
@@ -17,6 +27,7 @@ export default function ListsView({ session }) {
   const [newListName, setNewListName] = useState('')
   const [error, setError] = useState(null)
   const [confirmDelete, setConfirmDelete] = useState(null)
+  const [settingsOpen, setSettingsOpen] = useState(false)
 
   useEffect(() => {
     fetchLists()
@@ -77,7 +88,16 @@ export default function ListsView({ session }) {
     <div className="min-h-dvh bg-gray-50 flex flex-col">
       {/* Scrollable content */}
       <div className="flex-1 overflow-y-auto px-4 pt-8 pb-4">
-        <h1 className="text-2xl font-bold mb-4">My Lists</h1>
+        <div className="flex items-center justify-between mb-4">
+          <h1 className="text-2xl font-bold">My Lists</h1>
+          <button
+            onClick={() => setSettingsOpen(true)}
+            aria-label="Settings"
+            className="w-9 h-9 flex items-center justify-center rounded-full text-gray-500 active:bg-gray-100"
+          >
+            <SettingsIcon />
+          </button>
+        </div>
 
         {lists.length === 0 && !creating && (
           <div className="text-center py-16">
@@ -188,6 +208,9 @@ export default function ListsView({ session }) {
           </div>
         </BottomSheet>
       )}
+
+      {/* Side drawer */}
+      <SettingsDrawer open={settingsOpen} onClose={() => setSettingsOpen(false)} />
     </div>
   )
 }
