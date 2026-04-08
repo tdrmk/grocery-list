@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- Back handle (behind food and bag) — slightly muted to imply depth -->
+  <path d="M33,50 Q30,22 44,19 Q58,16 55,50"
+        fill="none" stroke="#C8E6C9" stroke-width="5.5" stroke-linecap="round"/>
+
+  <!-- BAGUETTE — drawn before bag body so bag covers inside portion -->
+  <g transform="rotate(-16, 43, 55)">
+    <g transform="translate(44,44) scale(0.8) translate(-44,-44)">
+      <rect x="38.5" y="12" width="11" height="64" rx="5.5" fill="#C8973A"/>
+      <rect x="40.5" y="16" width="4" height="56" rx="2" fill="#E8B84A" opacity="0.55"/>
+      <ellipse cx="44" cy="12" rx="5.5" ry="8" fill="#9A6B1E"/>
+      <ellipse cx="44" cy="76" rx="5.5" ry="4.5" fill="#9A6B1E"/>
+      <line x1="39.5" y1="27" x2="48.5" y2="31" stroke="#7A520F" stroke-width="2" stroke-linecap="round"/>
+      <line x1="39.5" y1="37" x2="48.5" y2="41" stroke="#7A520F" stroke-width="2" stroke-linecap="round"/>
+      <line x1="39.5" y1="47" x2="48.5" y2="51" stroke="#7A520F" stroke-width="2" stroke-linecap="round"/>
+    </g>
+  </g>
+
+  <!-- APPLE — drawn before bag body -->
+  <g transform="translate(63,40)">
+    <g transform="scale(0.8)">
+      <path d="M0,-13 C7,-13 12,-6 12,3 C12,12 7,16 0,16 C-7,16 -12,12 -12,3 C-12,-6 -7,-13 0,-13 Z"
+            fill="#E53935"/>
+      <ellipse cx="0" cy="-12" rx="2.5" ry="2" fill="#C62828"/>
+      <ellipse cx="-4" cy="-4" rx="3" ry="4.5" fill="#FFCDD2" opacity="0.65"/>
+      <path d="M0,-13 Q3,-22 6,-20" fill="none" stroke="#5D4037" stroke-width="2.5" stroke-linecap="round"/>
+      <path d="M4,-19 Q12,-25 11,-17 Q7,-14 4,-19 Z" fill="#66BB6A"/>
+      <line x1="4" y1="-19" x2="11" y2="-17" stroke="#43A047" stroke-width="1" stroke-linecap="round"/>
+    </g>
+  </g>
+
+  <!-- BAG BODY -->
+  <path d="M25,50 L75,50 L71,83 L29,83 Z" fill="#FAFAFA"/>
+  <line x1="35" y1="50" x2="33" y2="83" stroke="#E0E0E0" stroke-width="1.5"/>
+  <line x1="65" y1="50" x2="67" y2="83" stroke="#E0E0E0" stroke-width="1.5"/>
+
+  <!-- Bag top fold / rim -->
+  <rect x="25" y="44" width="50" height="8" rx="3" fill="#EEEEEE"/>
+  <line x1="25" y1="52" x2="75" y2="52" stroke="#BDBDBD" stroke-width="1"/>
+
+  <!-- Front handle -->
+  <path d="M45,50 Q44,20 60,19 Q74,18 68,50"
+        fill="none" stroke="#4caf50" stroke-width="5.5" stroke-linecap="round"/>
+
+  <!-- Rivets -->
+  <circle cx="45" cy="50" r="3.5" fill="#A08060"/>
+  <circle cx="45" cy="50" r="1.8" fill="#C8A878"/>
+  <circle cx="68" cy="50" r="3.5" fill="#A08060"/>
+  <circle cx="68" cy="50" r="1.8" fill="#C8A878"/>
+</svg>

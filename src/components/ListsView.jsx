@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../supabaseClient'
+import groceryBag from '../assets/grocery-bag.svg'
 import IosInstallHint from './IosInstallHint'
 import { AvatarGroup } from './commons/Avatar'
 import EmojiGroup from './commons/EmojiGroup'
@@ -77,7 +78,11 @@ export default function ListsView({ session }) {
         <h1 className="text-2xl font-bold mb-4">My Lists</h1>
 
         {lists.length === 0 && !creating && (
-          <p className="text-gray-400 text-center py-16">No lists yet. Create one below!</p>
+          <div className="text-center py-16">
+            <img src={groceryBag} alt="" className="w-20 h-20 mx-auto mb-4" />
+            <p className="font-semibold text-gray-700">No lists yet</p>
+            <p className="text-sm text-gray-400 mt-1">Create your first list to get started!</p>
+          </div>
         )}
 
         <ul className="flex flex-col gap-2">
