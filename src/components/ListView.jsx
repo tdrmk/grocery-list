@@ -282,7 +282,15 @@ export default function ListView({ session }) {
       )}
       {showMembers && (
         <BottomSheet open onClose={() => setShowMembers(false)}>
-          <p className="font-semibold text-base">Members</p>
+          <div className="flex items-center justify-between mb-1">
+            <p className="font-semibold text-base">Members</p>
+            <button
+              onClick={() => shareList()}
+              className="text-primary text-xl rounded-full w-9 h-9 flex items-center justify-center"
+            >
+              📤
+            </button>
+          </div>
           <ul className="flex flex-col gap-3">
             {members.map(m => (
               <li key={m.user_id} className="flex items-center gap-3">
