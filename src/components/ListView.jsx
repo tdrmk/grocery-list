@@ -7,6 +7,14 @@ import BottomSheet from './commons/BottomSheet'
 import { useToast } from './commons/Toast'
 import SwipeableRow from './commons/SwipeableRow'
 
+function ShareIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 2v13"/><path d="m16 6-4-4-4 4"/><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
+    </svg>
+  )
+}
+
 export default function ListView({ session }) {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -174,9 +182,10 @@ export default function ListView({ session }) {
           </div>
           <button
             onClick={shareList}
-            className="text-primary text-xl rounded-full w-9 h-9 flex items-center justify-center"
+            aria-label="Share list"
+            className="text-primary rounded-full w-9 h-9 flex items-center justify-center"
           >
-            {'📤'}
+              <ShareIcon />
           </button>
         </div>
       </div>
@@ -310,9 +319,10 @@ export default function ListView({ session }) {
             <p className="font-semibold text-base">Members</p>
             <button
               onClick={() => shareList()}
-              className="text-primary text-xl rounded-full w-9 h-9 flex items-center justify-center"
+              aria-label="Share list"
+              className="text-primary rounded-full w-9 h-9 flex items-center justify-center"
             >
-              📤
+              <ShareIcon />
             </button>
           </div>
           <ul className="flex flex-col gap-3">
