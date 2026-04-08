@@ -53,7 +53,7 @@ create policy "Users see their lists"
   to authenticated
   using (
     created_by = (select auth.uid())
-    or id in (select list_id from list_members where user_id = (select auth.uid()))
+    or id in (select private.get_my_list_ids())
   );
 
 create policy "Authenticated users can create lists"
