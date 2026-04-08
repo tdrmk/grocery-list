@@ -4,15 +4,16 @@ import { supabase } from '../supabaseClient'
 import { AvatarGroup } from './commons/Avatar'
 import Avatar from './commons/Avatar'
 import BottomSheet from './commons/BottomSheet'
+import { useToast } from './commons/Toast'
 
 export default function ListView({ session }) {
   const { id } = useParams()
   const navigate = useNavigate()
+  const showToast = useToast()
   const [list, setList] = useState(null)
   const [members, setMembers] = useState([])
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
-  const [copied, setCopied] = useState(false)
   const [showMembers, setShowMembers] = useState(false)
   const [editingItem, setEditingItem] = useState(null)
   const [editQuantity, setEditQuantity] = useState('')
@@ -113,8 +114,7 @@ export default function ListView({ session }) {
       .single()
     const url = `${window.location.origin}/join/${data.token}`
     await navigator.clipboard.writeText(url)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
+    showToast('Link copied!')
   }
 
   function openEdit(item) {
@@ -163,7 +163,7 @@ export default function ListView({ session }) {
             onClick={shareList}
             className="text-primary text-xl rounded-full w-9 h-9 flex items-center justify-center"
           >
-            {copied ? '✓' : '📤'}
+            {'📤'}
           </button>
         </div>
       </div>

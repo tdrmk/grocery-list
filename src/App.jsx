@@ -8,6 +8,7 @@ import ListView from './components/ListView'
 import AddItem from './components/AddItem'
 import AddCustomItem from './components/AddCustomItem'
 import JoinList from './components/JoinList'
+import { ToastProvider } from './components/commons/Toast'
 
 export default function App() {
   const [session, setSession] = useState(undefined)
@@ -50,15 +51,17 @@ export default function App() {
   if (!profile) return <ProfileSetup session={session} onComplete={() => fetchProfile(session)} />
 
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<ListsView session={session} />} />
-        <Route path="/list/:id" element={<ListView session={session} />} />
-        <Route path="/list/:id/add" element={<AddItem session={session} />} />
-        <Route path="/list/:id/add/custom" element={<AddCustomItem />} />
-        <Route path="/join/:token" element={<JoinList session={session} />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </BrowserRouter>
+    <ToastProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<ListsView session={session} />} />
+          <Route path="/list/:id" element={<ListView session={session} />} />
+          <Route path="/list/:id/add" element={<AddItem session={session} />} />
+          <Route path="/list/:id/add/custom" element={<AddCustomItem />} />
+          <Route path="/join/:token" element={<JoinList session={session} />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </BrowserRouter>
+    </ToastProvider>
   )
 }
