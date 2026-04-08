@@ -143,6 +143,12 @@ export default function ListView({ session }) {
   const activeItems = items.filter(i => i.status === 'active')
   const purchasedItems = items.filter(i => i.status === 'purchased')
 
+  const groupedActive = activeItems.reduce((acc, item) => {
+    if (!acc[item.category]) acc[item.category] = []
+    acc[item.category].push(item)
+    return acc
+  }, {})
+
   return (
     <div className="min-h-dvh bg-gray-50 flex flex-col">
       {/* Header */}
@@ -172,54 +178,72 @@ export default function ListView({ session }) {
       <div className="flex-1 overflow-y-auto px-4 py-4">
         {/* Empty state */}
         {activeItems.length === 0 && purchasedItems.length === 0 && (
-          <p className="text-center text-gray-400 py-16">No items yet.</p>
+          <div className="text-center py-8">
+            <p className="text-4xl mb-3">🛒</p>
+            <p className="font-semibold text-gray-700">Ready to shop?</p>
+            <p className="text-sm text-gray-400 mt-1">Add some items!</p>
+          </div>
         )}
 
-        {/* Active items */}
+        {/* All done state */}
+        {activeItems.length === 0 && purchasedItems.length > 0 && (
+          <p className="text-center text-gray-400 py-4">All items purchased!</p>
+        )}
+
+        {/* Active items grouped by category */}
         {activeItems.length > 0 && (
-          <ul className="flex flex-col gap-1">
-            {activeItems.map(item => (
-              <li
-                key={item.id}
-                onClick={() => togglePurchased(item)}
-                className="flex items-center gap-3 bg-white rounded-xl px-4 py-3 shadow-sm active:bg-gray-50 cursor-pointer select-none"
-              >
-                <span className="text-xl">{item.icon}</span>
-                <span className="flex-1 text-base">{item.name}</span>
-                {item.quantity && <span className="text-sm text-gray-400">{item.quantity}</span>}
-                {item.notes && <span className="text-sm text-gray-300 italic">{item.notes}</span>}
-                <button
-                  onClick={e => { e.stopPropagation(); openEdit(item) }}
-                  className="text-base px-1 shrink-0"
-                >
-                  ✏️
-                </button>
-                <button
-                  onClick={e => { e.stopPropagation(); deleteItem(item) }}
-                  className="text-gray-300 text-base px-1 shrink-0"
-                >
-                  🗑️
-                </button>
-              </li>
+          <div className="flex flex-col gap-4">
+            {Object.entries(groupedActive).map(([category, categoryItems]) => (
+              <div key={category}>
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide px-1 mb-1">{category}</p>
+                <ul className="flex flex-col gap-1">
+                  {categoryItems.map(item => (
+                    <li
+                      key={item.id}
+                      onClick={() => togglePurchased(item)}
+                      className="flex items-center gap-3 bg-white rounded-xl px-4 py-3 shadow-sm active:bg-gray-50 cursor-pointer select-none"
+                    >
+                      <span className="text-xl">{item.icon}</span>
+                      <span className="flex-1 text-base">{item.name}</span>
+                      {item.quantity && <span className="text-sm text-gray-400">{item.quantity}</span>}
+                      {item.notes && <span className="text-sm text-gray-300 italic">{item.notes}</span>}
+                      <button
+                        onClick={e => { e.stopPropagation(); openEdit(item) }}
+                        className="text-base px-1 shrink-0"
+                      >
+                        ✏️
+                      </button>
+                      <button
+                        onClick={e => { e.stopPropagation(); deleteItem(item) }}
+                        className="text-gray-300 text-base px-1 shrink-0"
+                      >
+                        🗑️
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             ))}
-          </ul>
+          </div>
         )}
 
         {/* Purchased items */}
         {purchasedItems.length > 0 && (
           <div className="mt-6">
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2 px-1">
-              Purchased
-            </p>
+            <div className="flex items-center gap-3 mb-2 px-1">
+              <div className="flex-1 h-px bg-gray-200" />
+              <p className="text-sm font-bold text-gray-500">Purchased</p>
+              <div className="flex-1 h-px bg-gray-200" />
+            </div>
             <ul className="flex flex-col gap-1">
               {purchasedItems.map(item => (
                 <li
                   key={item.id}
                   onClick={() => togglePurchased(item)}
-                  className="flex items-center gap-3 bg-white rounded-xl px-4 py-3 shadow-sm opacity-50 active:bg-gray-50 cursor-pointer select-none"
+                  className="flex items-center gap-3 bg-white rounded-xl px-4 py-3 shadow-sm opacity-40 active:bg-gray-50 cursor-pointer select-none"
                 >
                   <span className="text-xl">{item.icon}</span>
-                  <span className="flex-1 text-base line-through">{item.name}</span>
+                  <span className="flex-1 text-base">{item.name}</span>
                   <button
                     onClick={e => { e.stopPropagation(); clearItem(item) }}
                     className="text-gray-400 text-base px-1 shrink-0"
