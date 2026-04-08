@@ -69,6 +69,11 @@ export default function SwipeableRow({ actions, onClick, children }) {
     revealRef.current > maxWidth * 0.5 ? snapOpen() : snapClose()
   }
 
+  function onPointerCancel() {
+    isDragging.current = false
+    snapClose()
+  }
+
   function handleClick() {
     if (hasSwiped.current) return
     if (isOpen.current) { snapClose(); return }
@@ -78,9 +83,11 @@ export default function SwipeableRow({ actions, onClick, children }) {
   return (
     <div
       className="relative overflow-hidden"
+      style={{ touchAction: 'pan-y' }}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
+      onPointerCancel={onPointerCancel}
       onClick={handleClick}
     >
       {/* Content — always full width, never moves */}
