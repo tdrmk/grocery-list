@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../supabaseClient'
 import { AvatarGroup } from './commons/Avatar'
+import Avatar from './commons/Avatar'
 import BottomSheet from './commons/BottomSheet'
 
 export default function ListView({ session }) {
@@ -12,6 +13,7 @@ export default function ListView({ session }) {
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
   const [copied, setCopied] = useState(false)
+  const [showMembers, setShowMembers] = useState(false)
   const [editingItem, setEditingItem] = useState(null)
   const [editQuantity, setEditQuantity] = useState('')
   const [editNotes, setEditNotes] = useState('')
@@ -152,7 +154,9 @@ export default function ListView({ session }) {
           <div className="flex-1 flex flex-col items-center">
             <h1 className="font-bold text-lg truncate">{list.name}</h1>
             {members.length > 0 && (
-              <AvatarGroup members={members.map(m => ({ userId: m.user_id, name: m.profiles?.name ?? '?' }))} />
+              <button onClick={() => setShowMembers(true)}>
+                <AvatarGroup members={members.map(m => ({ userId: m.user_id, name: m.profiles?.name ?? '?' }))} />
+              </button>
             )}
           </div>
           <button
@@ -274,6 +278,22 @@ export default function ListView({ session }) {
           >
             Save
           </button>
+        </BottomSheet>
+      )}
+      {showMembers && (
+        <BottomSheet open onClose={() => setShowMembers(false)}>
+          <p className="font-semibold text-base">Members</p>
+          <ul className="flex flex-col gap-3">
+            {members.map(m => (
+              <li key={m.user_id} className="flex items-center gap-3">
+                <Avatar name={m.profiles?.name ?? '?'} userId={m.user_id} />
+                <span className="text-base">
+                  {m.profiles?.name ?? 'Unknown'}
+                  {m.user_id === session.user.id && <span className="text-gray-400 text-sm ml-1">(You)</span>}
+                </span>
+              </li>
+            ))}
+          </ul>
         </BottomSheet>
       )}
     </div>
