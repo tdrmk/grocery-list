@@ -73,17 +73,20 @@ export default function ListView({ session }) {
       status: newStatus,
       purchased_at: newStatus === 'purchased' ? new Date().toISOString() : null
     }
-    await supabase.from('items').update(updates).eq('id', item.id)
+    const { error } = await supabase.from('items').update(updates).eq('id', item.id)
+    if (error) { showToast(`Error: ${error.message}`); return }
     fetchItems()
   }
 
   async function clearItem(item) {
-    await supabase.from('items').update({ status: 'cleared' }).eq('id', item.id)
+    const { error } = await supabase.from('items').update({ status: 'cleared' }).eq('id', item.id)
+    if (error) { showToast(`Error: ${error.message}`); return }
     fetchItems()
   }
 
   async function deleteItem(item) {
-    await supabase.from('items').delete().eq('id', item.id)
+    const { error } = await supabase.from('items').delete().eq('id', item.id)
+    if (error) { showToast(`Error: ${error.message}`); return }
     fetchItems()
   }
 
@@ -99,20 +102,22 @@ export default function ListView({ session }) {
   }
 
   async function clearPurchased() {
-    await supabase
+    const { error } = await supabase
       .from('items')
       .update({ status: 'cleared' })
       .eq('list_id', id)
       .eq('status', 'purchased')
+    if (error) { showToast(`Error: ${error.message}`); return }
     fetchItems()
   }
 
   async function shareList() {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('share_links')
       .insert({ list_id: id })
       .select('token')
       .single()
+    if (error || !data) { showToast(`Error: ${error?.message ?? 'Could not create share link'}`); return }
     const url = `${window.location.origin}/join/${data.token}`
     await navigator.clipboard.writeText(url)
     showToast('Link copied!')
@@ -125,10 +130,11 @@ export default function ListView({ session }) {
   }
 
   async function saveEdit() {
-    await supabase
+    const { error } = await supabase
       .from('items')
       .update({ quantity: editQuantity || null, notes: editNotes || null })
       .eq('id', editingItem.id)
+    if (error) { showToast(`Error: ${error.message}`); return }
     setEditingItem(null)
   }
 

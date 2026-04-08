@@ -6,9 +6,11 @@ import IosInstallHint from './IosInstallHint'
 import { AvatarGroup } from './commons/Avatar'
 import EmojiGroup from './commons/EmojiGroup'
 import BottomSheet from './commons/BottomSheet'
+import { useToast } from './commons/Toast'
 
 export default function ListsView({ session }) {
   const navigate = useNavigate()
+  const showToast = useToast()
   const [lists, setLists] = useState([])
   const [loading, setLoading] = useState(true)
   const [creating, setCreating] = useState(false)
@@ -167,7 +169,12 @@ export default function ListsView({ session }) {
           <p className="text-sm text-gray-400 -mt-2">This cannot be undone.</p>
           <div className="flex gap-2">
             <button
-              onClick={async () => { await supabase.from('lists').delete().eq('id', confirmDelete.id); setConfirmDelete(null); fetchLists() }}
+              onClick={async () => {
+                const { error } = await supabase.from('lists').delete().eq('id', confirmDelete.id)
+                if (error) { showToast(`Error: ${error.message}`); return }
+                setConfirmDelete(null)
+                fetchLists()
+              }}
               className="flex-1 bg-red-500 text-white font-semibold rounded-xl py-3"
             >
               Delete

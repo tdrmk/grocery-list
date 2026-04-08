@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../supabaseClient'
+import { useToast } from './commons/Toast'
 
 export default function AddItem() {
   const { id: listId } = useParams()
   const navigate = useNavigate()
+  const showToast = useToast()
   const [catalog, setCatalog] = useState([])
   const [recentItems, setRecentItems] = useState([])
   const [addedIds, setAddedIds] = useState(new Set())
@@ -41,7 +43,7 @@ export default function AddItem() {
   async function addItem(catalogItem) {
     setAdding(catalogItem.id)
 
-    await supabase.from('items').insert({
+    const { error } = await supabase.from('items').insert({
       list_id: listId,
       catalog_id: catalogItem.id,
       name: catalogItem.name,
@@ -50,6 +52,7 @@ export default function AddItem() {
       status: 'active',
     })
 
+    if (error) { showToast(`Error: ${error.message}`); setAdding(null); return }
     setAddedIds(prev => new Set([...prev, catalogItem.id]))
     setAdding(null)
   }

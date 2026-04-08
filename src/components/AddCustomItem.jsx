@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from '../supabaseClient'
 import BottomSheet from './commons/BottomSheet'
+import { useToast } from './commons/Toast'
 
 const CATEGORIES = [
   'Produce', 'Dairy & Eggs', 'Bakery', 'Meat & Seafood',
@@ -45,6 +46,7 @@ export default function AddCustomItem() {
   const { id: listId } = useParams()
   const navigate = useNavigate()
   const location = useLocation()
+  const showToast = useToast()
 
   const existingItem = location.state?.existingItem ?? null
 
@@ -61,14 +63,18 @@ export default function AddCustomItem() {
     const formatted = name.trim().replace(/\b\w/g, c => c.toUpperCase())
 
     if (existingItem) {
-      await supabase
+      const { error: catalogError } = await supabase
         .from('catalog')
         .update({ name: formatted, category, icon })
         .eq('id', existingItem.id)
-      await supabase
+      if (catalogError) { showToast(`Error: ${catalogError.message}`); setSaving(false); return }
+
+      const { error: itemsError } = await supabase
         .from('items')
         .update({ name: formatted, category, icon })
         .eq('catalog_id', existingItem.id)
+      if (itemsError) { showToast(`Error: ${itemsError.message}`); setSaving(false); return }
+
       navigate(-1)
     } else {
       const { data: catalogRow, error } = await supabase
@@ -77,9 +83,9 @@ export default function AddCustomItem() {
         .select()
         .single()
 
-      if (error || !catalogRow) { setSaving(false); return }
+      if (error || !catalogRow) { showToast(`Error: ${error?.message ?? 'Could not create item'}`); setSaving(false); return }
 
-      await supabase.from('items').insert({
+      const { error: itemsError } = await supabase.from('items').insert({
         list_id: listId,
         catalog_id: catalogRow.id,
         name: catalogRow.name,
@@ -87,6 +93,7 @@ export default function AddCustomItem() {
         icon: catalogRow.icon,
         status: 'active',
       })
+      if (itemsError) { showToast(`Error: ${itemsError.message}`); setSaving(false); return }
 
       navigate(`/list/${listId}/add`, { replace: true })
     }
@@ -186,7 +193,11 @@ export default function AddCustomItem() {
           <p className="text-base font-semibold">Delete this item from your catalog?</p>
           <div className="flex gap-2">
             <button
-              onClick={async () => { await supabase.from('catalog').delete().eq('id', existingItem.id); navigate(-1) }}
+              onClick={async () => {
+                const { error } = await supabase.from('catalog').delete().eq('id', existingItem.id)
+                if (error) { showToast(`Error: ${error.message}`); return }
+                navigate(-1)
+              }}
               className="flex-1 bg-red-500 text-white font-semibold rounded-xl py-3"
             >
               Delete
