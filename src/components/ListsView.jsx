@@ -65,9 +65,7 @@ export default function ListsView({ session }) {
       return
     }
 
-    setNewListName('')
-    setCreating(false)
-    fetchLists()
+    navigate(`/list/${list.id}`)
   }
 
   if (loading) return null
