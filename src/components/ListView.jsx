@@ -207,7 +207,7 @@ export default function ListView({ session }) {
                         ]}
                         onClick={() => togglePurchased(item)}
                       >
-                        <div className="flex items-center gap-3 px-4 py-3 active:bg-gray-50 cursor-pointer select-none">
+                        <div className="flex items-center gap-3 pl-4 pr-8 py-3 active:bg-gray-50 cursor-pointer select-none">
                           <span className="text-xl">{item.icon}</span>
                           <span className="flex-1 text-base">{item.name}</span>
                           {item.quantity && <span className="text-sm text-gray-400">{item.quantity}</span>}

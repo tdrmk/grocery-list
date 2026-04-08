@@ -84,8 +84,9 @@ export default function SwipeableRow({ actions, onClick, children }) {
       onClick={handleClick}
     >
       {/* Content — always full width, never moves */}
-      <div>
+      <div className="relative">
         {children}
+        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-300 text-xl select-none pointer-events-none">‹</span>
       </div>
 
       {/* Actions — slide in from the right, overlaying the content */}
