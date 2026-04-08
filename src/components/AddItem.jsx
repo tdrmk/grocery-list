@@ -88,9 +88,9 @@ export default function AddItem() {
         <div className="flex items-center px-4 py-3 gap-3">
           <button
             onClick={() => navigate(`/list/${listId}`)}
-            className="text-primary font-medium text-sm shrink-0"
+            className="text-primary text-xl rounded-full w-9 h-9 flex items-center justify-center shrink-0"
           >
-            ← Back
+            ←
           </button>
           <input
             type="search"
@@ -98,11 +98,11 @@ export default function AddItem() {
             value={search}
             onChange={e => setSearch(e.target.value)}
             autoFocus
-            className="flex-1 bg-gray-100 rounded-xl px-4 py-2 text-base focus:outline-none"
+            className="flex-1 min-w-0 bg-gray-100 rounded-xl px-3 py-1.5 text-base focus:outline-none"
           />
           <button
             onClick={() => navigate(`/list/${listId}/add/custom`, { state: { defaultName: search.trim() } })}
-            className="text-primary font-bold text-2xl shrink-0 leading-none"
+            className="text-primary text-xl rounded-full w-9 h-9 flex items-center justify-center shrink-0"
           >
             +
           </button>

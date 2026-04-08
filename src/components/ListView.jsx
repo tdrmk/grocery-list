@@ -148,8 +148,8 @@ export default function ListView({ session }) {
       {/* Header */}
       <div className="sticky top-0 bg-white border-b border-gray-100 z-10">
         <div className="flex items-center px-4 py-3 gap-3">
-          <button onClick={() => navigate('/')} className="text-primary font-medium text-sm">
-            ← Back
+          <button onClick={() => navigate('/')} className="text-primary text-xl rounded-full w-9 h-9 flex items-center justify-center">
+            ←
           </button>
           <div className="flex-1 flex flex-col items-center">
             <h1 className="font-bold text-lg truncate">{list.name}</h1>
@@ -161,9 +161,9 @@ export default function ListView({ session }) {
           </div>
           <button
             onClick={shareList}
-            className="text-sm text-primary font-medium"
+            className="text-primary text-xl rounded-full w-9 h-9 flex items-center justify-center"
           >
-            {copied ? '✓ Copied' : 'Share'}
+            {copied ? '✓' : '📤'}
           </button>
         </div>
       </div>

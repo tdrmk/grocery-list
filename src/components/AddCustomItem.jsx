@@ -101,9 +101,9 @@ export default function AddCustomItem() {
         <div className="flex items-center px-4 py-3 gap-3">
           <button
             onClick={() => navigate(-1)}
-            className="text-primary font-medium text-sm shrink-0"
+            className="text-primary text-xl rounded-full w-9 h-9 flex items-center justify-center shrink-0"
           >
-            ← Back
+            ←
           </button>
           <h1 className="flex-1 text-center font-semibold text-base">
             {existingItem ? 'Edit item' : 'New item'}
