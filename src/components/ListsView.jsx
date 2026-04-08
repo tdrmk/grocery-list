@@ -4,6 +4,7 @@ import { supabase } from '../supabaseClient'
 import IosInstallHint from './IosInstallHint'
 import { AvatarGroup } from './commons/Avatar'
 import EmojiGroup from './commons/EmojiGroup'
+import BottomSheet from './commons/BottomSheet'
 
 export default function ListsView({ session }) {
   const navigate = useNavigate()
@@ -12,6 +13,7 @@ export default function ListsView({ session }) {
   const [creating, setCreating] = useState(false)
   const [newListName, setNewListName] = useState('')
   const [error, setError] = useState(null)
+  const [confirmDelete, setConfirmDelete] = useState(null)
 
   useEffect(() => {
     fetchLists()
@@ -54,19 +56,17 @@ export default function ListsView({ session }) {
       return
     }
 
-    await supabase
+    const { error: memberError } = await supabase
       .from('list_members')
       .insert({ list_id: list.id, user_id: session.user.id })
 
+    if (memberError) {
+      setError(memberError.message)
+      return
+    }
+
     setNewListName('')
     setCreating(false)
-    fetchLists()
-  }
-
-  async function deleteList(list) {
-    if (!confirm(`Delete "${list.name}"? This cannot be undone.`)) return
-
-    await supabase.from('lists').delete().eq('id', list.id)
     fetchLists()
   }
 
@@ -103,7 +103,7 @@ export default function ListsView({ session }) {
                 }
               </div>
               <button
-                onClick={() => deleteList(list)}
+                onClick={() => setConfirmDelete(list)}
                 className="text-sm text-red-400 ml-4"
               >
                 Delete
@@ -155,6 +155,27 @@ export default function ListsView({ session }) {
           </button>
         )}
       </div>
+
+      {confirmDelete && (
+        <BottomSheet open onClose={() => setConfirmDelete(null)}>
+          <p className="text-base font-semibold">Delete "{confirmDelete.name}"?</p>
+          <p className="text-sm text-gray-400 -mt-2">This cannot be undone.</p>
+          <div className="flex gap-2">
+            <button
+              onClick={async () => { await supabase.from('lists').delete().eq('id', confirmDelete.id); setConfirmDelete(null); fetchLists() }}
+              className="flex-1 bg-red-500 text-white font-semibold rounded-xl py-3"
+            >
+              Delete
+            </button>
+            <button
+              onClick={() => setConfirmDelete(null)}
+              className="flex-1 bg-gray-100 text-gray-600 font-semibold rounded-xl py-3"
+            >
+              Cancel
+            </button>
+          </div>
+        </BottomSheet>
+      )}
     </div>
   )
 }

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../supabaseClient'
 import { AvatarGroup } from './commons/Avatar'
+import BottomSheet from './commons/BottomSheet'
 
 export default function ListView({ session }) {
   const { id } = useParams()
@@ -246,37 +247,34 @@ export default function ListView({ session }) {
 
       {/* Edit bottom sheet */}
       {editingItem && (
-        <div className="fixed inset-0 z-50 flex flex-col justify-end">
-          <div className="absolute inset-0 bg-black/30" onClick={() => setEditingItem(null)} />
-          <div className="relative bg-white rounded-t-2xl px-4 pt-4 pb-8 flex flex-col gap-4 max-w-[480px] w-full mx-auto">
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-xl">{editingItem.icon}</span>
-              <span className="font-semibold text-base">{editingItem.name}</span>
-            </div>
-            <div className="flex flex-col gap-3">
-              <input
-                type="text"
-                placeholder="Quantity (e.g. 2x, 500g)"
-                value={editQuantity}
-                onChange={e => setEditQuantity(e.target.value)}
-                className="w-full bg-gray-100 rounded-xl px-4 py-3 text-base focus:outline-none"
-              />
-              <input
-                type="text"
-                placeholder="Notes (e.g. organic, the blue package)"
-                value={editNotes}
-                onChange={e => setEditNotes(e.target.value)}
-                className="w-full bg-gray-100 rounded-xl px-4 py-3 text-base focus:outline-none"
-              />
-            </div>
-            <button
-              onClick={saveEdit}
-              className="w-full bg-primary text-white font-semibold rounded-xl py-3 text-base"
-            >
-              Save
-            </button>
+        <BottomSheet open onClose={() => setEditingItem(null)}>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-xl">{editingItem.icon}</span>
+            <span className="font-semibold text-base">{editingItem.name}</span>
           </div>
-        </div>
+          <div className="flex flex-col gap-3">
+            <input
+              type="text"
+              placeholder="Quantity (e.g. 2x, 500g)"
+              value={editQuantity}
+              onChange={e => setEditQuantity(e.target.value)}
+              className="w-full bg-gray-100 rounded-xl px-4 py-3 text-base focus:outline-none"
+            />
+            <input
+              type="text"
+              placeholder="Notes (e.g. organic, the blue package)"
+              value={editNotes}
+              onChange={e => setEditNotes(e.target.value)}
+              className="w-full bg-gray-100 rounded-xl px-4 py-3 text-base focus:outline-none"
+            />
+          </div>
+          <button
+            onClick={saveEdit}
+            className="w-full bg-primary text-white font-semibold rounded-xl py-3 text-base"
+          >
+            Save
+          </button>
+        </BottomSheet>
       )}
     </div>
   )

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from '../supabaseClient'
+import BottomSheet from './commons/BottomSheet'
 
 const CATEGORIES = [
   'Produce', 'Dairy & Eggs', 'Bakery', 'Meat & Seafood',
@@ -51,6 +52,7 @@ export default function AddCustomItem() {
   const [category, setCategory] = useState(existingItem?.category ?? 'Custom')
   const [icon, setIcon] = useState(existingItem?.icon ?? ICONS[0])
   const [saving, setSaving] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
 
   async function save() {
     if (!name.trim()) return
@@ -90,12 +92,6 @@ export default function AddCustomItem() {
     }
 
     setSaving(false)
-  }
-
-  async function deleteItem() {
-    if (!window.confirm('Delete this item from your catalog?')) return
-    await supabase.from('catalog').delete().eq('id', existingItem.id)
-    navigate(-1)
   }
 
   return (
@@ -177,13 +173,33 @@ export default function AddCustomItem() {
         </button>
         {existingItem && (
           <button
-            onClick={deleteItem}
+            onClick={() => setConfirmDelete(true)}
             className="w-full text-red-500 font-medium py-2 text-base"
           >
             Delete
           </button>
         )}
       </div>
+
+      {confirmDelete && (
+        <BottomSheet open onClose={() => setConfirmDelete(false)}>
+          <p className="text-base font-semibold">Delete this item from your catalog?</p>
+          <div className="flex gap-2">
+            <button
+              onClick={async () => { await supabase.from('catalog').delete().eq('id', existingItem.id); navigate(-1) }}
+              className="flex-1 bg-red-500 text-white font-semibold rounded-xl py-3"
+            >
+              Delete
+            </button>
+            <button
+              onClick={() => setConfirmDelete(false)}
+              className="flex-1 bg-gray-100 text-gray-600 font-semibold rounded-xl py-3"
+            >
+              Cancel
+            </button>
+          </div>
+        </BottomSheet>
+      )}
     </div>
   )
 }
