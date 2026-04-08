@@ -8,6 +8,7 @@ export default function AddItem() {
   const [catalog, setCatalog] = useState([])
   const [recentItems, setRecentItems] = useState([])
   const [addedIds, setAddedIds] = useState(new Set())
+  const [purchasedIds, setPurchasedIds] = useState(new Set())
   const [search, setSearch] = useState('')
   const [adding, setAdding] = useState(null)
 
@@ -20,21 +21,15 @@ export default function AddItem() {
 
     supabase
       .from('items')
-      .select('catalog_id')
+      .select('catalog_id, status, name, icon, category')
       .eq('list_id', listId)
-      .eq('status', 'active')
       .then(({ data }) => {
-        setAddedIds(new Set((data ?? []).map(i => i.catalog_id).filter(Boolean)))
-      })
+        const items = data ?? []
+        setAddedIds(new Set(items.filter(i => i.status === 'active').map(i => i.catalog_id).filter(Boolean)))
+        setPurchasedIds(new Set(items.filter(i => i.status === 'purchased').map(i => i.catalog_id).filter(Boolean)))
 
-    supabase
-      .from('items')
-      .select('name, icon, category, catalog_id')
-      .eq('list_id', listId)
-      .in('status', ['cleared', 'purchased'])
-      .then(({ data }) => {
         const counts = {}
-        for (const item of data ?? []) {
+        for (const item of items.filter(i => i.status === 'cleared' || i.status === 'purchased')) {
           const key = item.catalog_id ?? item.name
           if (!counts[key]) counts[key] = { ...item, count: 0 }
           counts[key].count++
@@ -125,20 +120,25 @@ export default function AddItem() {
               <ul className="px-4 flex flex-col gap-1">
                 {recentItems.map(item => {
                   const isAdded = item.catalog_id ? addedIds.has(item.catalog_id) : false
+                  const isPurchased = item.catalog_id ? purchasedIds.has(item.catalog_id) : false
                   const isAdding = adding === item.catalog_id
                   return (
                     <li
                       key={item.catalog_id ?? item.name}
-                      onClick={() => !isAdded && addItem({ id: item.catalog_id, ...item })}
-                      className={`flex items-center gap-3 bg-white rounded-xl px-4 py-3 shadow-sm transition-opacity ${isAdded ? 'opacity-40 cursor-default' : 'active:bg-gray-50 cursor-pointer'} ${isAdding ? 'opacity-50' : ''}`}
+                      onClick={() => !isAdded && !isPurchased && addItem({ id: item.catalog_id, ...item })}
+                      className={`flex items-center gap-3 rounded-xl px-4 py-3 shadow-sm transition-colors ${isAdded ? 'bg-rose-50 cursor-default' : isPurchased ? 'bg-green-50 cursor-default' : 'bg-gray-50 active:bg-gray-100 cursor-pointer'} ${isAdding ? 'opacity-50' : ''}`}
                     >
                       <span className="text-xl">{item.icon}</span>
                       <span className="flex-1 text-base">{item.name}</span>
                       {item.count > 1 && <span className="text-gray-300 text-sm">×{item.count}</span>}
-                      {isAdded
-                        ? <span className="text-primary text-sm font-semibold">✓</span>
-                        : <span className="text-gray-300 text-xl">+</span>
-                      }
+                      <div className="w-5 h-5 flex items-center justify-center shrink-0">
+                        {isAdded
+                          ? <span className="text-sm">🛒</span>
+                          : isPurchased
+                          ? <span className="text-primary text-sm font-semibold">✓</span>
+                          : <span className="text-gray-300 text-xl">+</span>
+                        }
+                      </div>
                     </li>
                   )
                 })}
@@ -164,12 +164,13 @@ export default function AddItem() {
               <ul className="px-4 flex flex-col gap-1">
                 {items.map(item => {
                   const isAdded = addedIds.has(item.id)
+                  const isPurchased = purchasedIds.has(item.id)
                   const isAdding = adding === item.id
                   return (
                     <li
                       key={item.id}
-                      onClick={() => !isAdded && addItem(item)}
-                      className={`flex items-center gap-3 bg-white rounded-xl px-4 py-3 shadow-sm transition-opacity ${isAdded ? 'opacity-40 cursor-default' : 'active:bg-gray-50 cursor-pointer'} ${isAdding ? 'opacity-50' : ''}`}
+                      onClick={() => !isAdded && !isPurchased && addItem(item)}
+                      className={`flex items-center gap-3 rounded-xl px-4 py-3 shadow-sm transition-colors ${isAdded ? 'bg-rose-50 cursor-default' : isPurchased ? 'bg-green-50 cursor-default' : 'bg-gray-50 active:bg-gray-100 cursor-pointer'} ${isAdding ? 'opacity-50' : ''}`}
                     >
                       <span className="text-xl">{item.icon}</span>
                       <span className="flex-1 text-base">{item.name}</span>
@@ -181,10 +182,14 @@ export default function AddItem() {
                           ✏️
                         </button>
                       )}
-                      {isAdded
-                        ? <span className="text-primary text-sm font-semibold">✓</span>
-                        : <span className="text-gray-300 text-xl">+</span>
-                      }
+                      <div className="w-5 h-5 flex items-center justify-center shrink-0">
+                        {isAdded
+                          ? <span className="text-sm">🛒</span>
+                          : isPurchased
+                          ? <span className="text-primary text-sm font-semibold">✓</span>
+                          : <span className="text-gray-300 text-xl">+</span>
+                        }
+                      </div>
                     </li>
                   )
                 })}

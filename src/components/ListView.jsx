@@ -199,7 +199,7 @@ export default function ListView({ session }) {
                 <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide px-1 mb-1">{category}</p>
                 <ul className="flex flex-col gap-1">
                   {categoryItems.map(item => (
-                    <li key={item.id} className="rounded-xl overflow-hidden bg-white shadow-sm">
+                    <li key={item.id} className="rounded-xl overflow-hidden bg-rose-50 shadow-sm">
                       <SwipeableRow
                         actions={[
                           { icon: '✏️', label: 'Edit', color: 'bg-blue-400', onAction: () => openEdit(item) },
@@ -207,7 +207,7 @@ export default function ListView({ session }) {
                         ]}
                         onClick={() => togglePurchased(item)}
                       >
-                        <div className="flex items-center gap-3 pl-4 pr-8 py-3 active:bg-gray-50 cursor-pointer select-none">
+                        <div className="flex items-center gap-3 pl-4 pr-8 py-3 active:bg-rose-100 cursor-pointer select-none">
                           <span className="text-xl">{item.icon}</span>
                           <span className="flex-1 text-base">{item.name}</span>
                           {item.quantity && <span className="text-sm text-gray-400">{item.quantity}</span>}
@@ -232,14 +232,14 @@ export default function ListView({ session }) {
             </div>
             <ul className="flex flex-col gap-1">
               {purchasedItems.map(item => (
-                <li key={item.id} className="rounded-xl overflow-hidden bg-white shadow-sm opacity-40">
+                <li key={item.id} className="rounded-xl overflow-hidden bg-green-50 shadow-sm">
                   <SwipeableRow
                     actions={[
                       { icon: '✕', label: 'Clear', color: 'bg-gray-400', onAction: () => clearItem(item) },
                     ]}
                     onClick={() => togglePurchased(item)}
                   >
-                    <div className="flex items-center gap-3 px-4 py-3 active:bg-gray-50 cursor-pointer select-none">
+                    <div className="flex items-center gap-3 pl-4 pr-8 py-3 active:bg-green-100 cursor-pointer select-none">
                       <span className="text-xl">{item.icon}</span>
                       <span className="flex-1 text-base">{item.name}</span>
                     </div>
