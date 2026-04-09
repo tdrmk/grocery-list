@@ -53,7 +53,7 @@ export default function AddItem() {
       status: 'active',
     })
 
-    if (error) { showToast(`Error: ${error.message}`); setAdding(null); return }
+    if (error) { showToast(error.message, 'error'); setAdding(null); return }
     setAddedIds(prev => new Set([...prev, catalogItem.id]))
     setAdding(null)
   }

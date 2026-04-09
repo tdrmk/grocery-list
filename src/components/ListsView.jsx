@@ -193,7 +193,7 @@ export default function ListsView() {
             <button
               onClick={async () => {
                 const { error } = await supabase.from('lists').delete().eq('id', confirmDelete.id)
-                if (error) { showToast(`Error: ${error.message}`); return }
+                if (error) { showToast(error.message, 'error'); return }
                 setConfirmDelete(null)
                 fetchLists()
               }}

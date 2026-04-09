@@ -86,17 +86,17 @@ export default function ListView() {
       purchased_at: newStatus === 'purchased' ? new Date().toISOString() : null
     }
     const { error } = await supabase.from('items').update(updates).eq('id', item.id)
-    if (error) showToast(`Error: ${error.message}`)
+    if (error) showToast(error.message, 'error')
   }
 
   async function clearItem(item) {
     const { error } = await supabase.from('items').update({ status: 'cleared' }).eq('id', item.id)
-    if (error) showToast(`Error: ${error.message}`)
+    if (error) showToast(error.message, 'error')
   }
 
   async function deleteItem(item) {
     const { error } = await supabase.from('items').delete().eq('id', item.id)
-    if (error) showToast(`Error: ${error.message}`)
+    if (error) showToast(error.message, 'error')
   }
 
   async function autoClearStale() {
@@ -116,7 +116,7 @@ export default function ListView() {
       .update({ status: 'cleared' })
       .eq('list_id', id)
       .eq('status', 'purchased')
-    if (error) showToast(`Error: ${error.message}`)
+    if (error) showToast(error.message, 'error')
   }
 
   async function shareList() {
@@ -125,7 +125,7 @@ export default function ListView() {
       .insert({ list_id: id })
       .select('token')
       .single()
-    if (error || !data) { showToast(`Error: ${error?.message ?? 'Could not create share link'}`); return }
+    if (error || !data) { showToast(error?.message ?? 'Could not create share link', 'error'); return }
     const url = `${window.location.origin}/join/${data.token}`
     const title = `${myName ? `${myName} invited you to join` : 'Join'} "${list.name}" on Grocery List`
     if (navigator.share) {
@@ -147,7 +147,7 @@ export default function ListView() {
       .from('items')
       .update({ quantity: editQuantity || null, notes: editNotes || null })
       .eq('id', editingItem.id)
-    if (error) { showToast(`Error: ${error.message}`); return }
+    if (error) { showToast(error.message, 'error'); return }
     setEditingItem(null)
   }
 

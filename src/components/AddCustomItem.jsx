@@ -83,7 +83,7 @@ export default function AddCustomItem() {
         .select()
         .single()
 
-      if (error || !catalogRow) { showToast(`Error: ${error?.message ?? 'Could not create item'}`); setSaving(false); return }
+      if (error || !catalogRow) { showToast(error?.message ?? 'Could not create item', 'error'); setSaving(false); return }
 
       const { error: itemsError } = await supabase.from('items').insert({
         list_id: listId,
@@ -195,7 +195,7 @@ export default function AddCustomItem() {
             <button
               onClick={async () => {
                 const { error } = await supabase.from('catalog').delete().eq('id', existingItem.id)
-                if (error) { showToast(`Error: ${error.message}`); return }
+                if (error) { showToast(error.message, 'error'); return }
                 navigate(-1)
               }}
               className="flex-1 bg-red-500 text-white font-semibold rounded-xl py-3"
