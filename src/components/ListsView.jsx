@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useQuery, useMutation } from '@tanstack/react-query'
 import { supabase } from '../supabaseClient'
 import { useUserId } from '../UserContext'
 import groceryBag from '../assets/grocery-bag.svg'
@@ -9,6 +10,8 @@ import EmojiGroup from './commons/EmojiGroup'
 import BottomSheet from './commons/BottomSheet'
 import { useToast } from './commons/Toast'
 import SettingsDrawer from './SettingsDrawer'
+import Spinner from './commons/Spinner'
+import Loading from './commons/Loading'
 
 function SettingsIcon() {
   return (
@@ -19,72 +22,134 @@ function SettingsIcon() {
   )
 }
 
-export default function ListsView() {
+function ConfirmDelete({ list, onClose, onDeleted }) {
+  const showToast = useToast()
+  const { mutateAsync: deleteList, isPending } = useMutation({
+    mutationFn: async ({ id }) => {
+      const { error } = await supabase.from('lists').delete().eq('id', id)
+      if (error) throw error
+    },
+    onError: (error) => showToast(error.message, 'error'),
+    onSuccess: () => { showToast(`"${list.name}" deleted`); onDeleted() },
+  })
+
+  async function handleDelete() {
+    await deleteList({ id: list.id })
+  }
+
+  return (
+    <BottomSheet open onClose={onClose}>
+      <p className="text-base font-semibold">Delete "{list.name}"?</p>
+      <p className="text-sm text-gray-400 -mt-2">This cannot be undone.</p>
+      <div className="flex gap-2">
+        <button onClick={handleDelete} disabled={isPending} className="flex-1 bg-red-500 text-white font-semibold rounded-xl py-3 disabled:opacity-50">
+          {isPending
+            ? <span className="flex items-center justify-center gap-2"><Spinner className="w-4 h-4" />Deleting…</span>
+            : 'Delete'}
+        </button>
+        <button onClick={onClose} className="flex-1 bg-gray-100 text-gray-600 font-semibold rounded-xl py-3">Cancel</button>
+      </div>
+    </BottomSheet>
+  )
+}
+
+function CreateList({ onClose }) {
   const userId = useUserId()
   const navigate = useNavigate()
-  const showToast = useToast()
-  const [lists, setLists] = useState([])
-  const [loading, setLoading] = useState(true)
+  const [name, setName] = useState('')
+  const { mutateAsync: createList, isPending, error } = useMutation({
+    mutationFn: async ({ name }) => {
+      const { data: list, error: listError } = await supabase
+        .from('lists')
+        .insert({ name, created_by: userId })
+        .select()
+        .single()
+      if (listError) throw listError
+
+      const { error: memberError } = await supabase
+        .from('list_members')
+        .insert({ list_id: list.id, user_id: userId })
+      if (memberError) throw memberError
+
+      return list
+    },
+    onSuccess: (list) => navigate(`/list/${list.id}`),
+  })
+
+  async function handleSubmit(e) {
+    e.preventDefault()
+    await createList({ name })
+  }
+
+  return (
+    <BottomSheet open onClose={onClose}>
+      <p className="text-base font-semibold">New List</p>
+      <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+        <input
+          type="text"
+          placeholder="List name"
+          value={name}
+          onChange={e => setName(e.target.value)}
+          required
+          autoFocus
+          className="w-full border border-gray-300 rounded-xl px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-primary"
+        />
+        {error && <p className="text-red-500 text-sm text-center">{error.message}</p>}
+        <div className="flex gap-2">
+          <button type="submit" disabled={isPending} className="flex-1 bg-primary text-white font-semibold rounded-xl py-3 disabled:opacity-50">
+            {isPending
+              ? <span className="flex items-center justify-center gap-2"><Spinner className="w-4 h-4" />Creating…</span>
+              : 'Create'}
+          </button>
+          <button type="button" onClick={onClose} className="flex-1 bg-gray-100 text-gray-600 font-semibold rounded-xl py-3">Cancel</button>
+        </div>
+      </form>
+    </BottomSheet>
+  )
+}
+
+function ListCard({ list }) {
+  const userId = useUserId()
+  const navigate = useNavigate()
+  const isCreator = list.created_by === userId
+  const [confirmDelete, setConfirmDelete] = useState(false)
+  const { data: items = [], isLoading } = useQuery({ queryKey: ['items', list.id] })
+  const icons = items.filter(i => i.status === 'active').map(i => i.icon)
+  return (
+    <li className="flex items-center justify-between bg-white rounded-xl px-4 py-3 shadow-sm">
+      <div className="flex-1 cursor-pointer" onClick={() => navigate(`/list/${list.id}`)}>
+        <p className="text-lg font-medium">{list.name}</p>
+        <AvatarGroup members={(list.list_members ?? []).map(m => ({
+          userId: m.user_id,
+          name: m.profiles?.name ?? '?',
+        }))} />
+        {isLoading
+          ? <div className="mt-2 ml-1"><Spinner /></div>
+          : icons.length > 0
+            ? <EmojiGroup icons={icons} className="mt-2" />
+            : <p className="text-xs text-gray-400 mt-2 ml-1">No items</p>
+        }
+      </div>
+      {isCreator && (
+        <button onClick={() => setConfirmDelete(true)} className="text-sm text-red-400 ml-4">Delete</button>
+      )}
+      {confirmDelete && (
+        <ConfirmDelete
+          list={list}
+          onClose={() => setConfirmDelete(false)}
+          onDeleted={() => setConfirmDelete(false)}
+        />
+      )}
+    </li>
+  )
+}
+
+export default function ListsView() {
+  const { data: lists = [], isLoading } = useQuery({ queryKey: ['lists'] })
   const [creating, setCreating] = useState(false)
-  const [newListName, setNewListName] = useState('')
-  const [error, setError] = useState(null)
-  const [confirmDelete, setConfirmDelete] = useState(null)
   const [settingsOpen, setSettingsOpen] = useState(false)
 
-  useEffect(() => {
-    fetchLists()
-  }, [])
-
-  async function fetchLists() {
-    const [{ data: listsData }, { data: itemsData }] = await Promise.all([
-      supabase
-        .from('lists')
-        .select('id, name, created_at, created_by, list_members(user_id, profiles(name))')
-        .order('created_at', { ascending: false }),
-      supabase
-        .from('items')
-        .select('list_id, icon')
-        .eq('status', 'active'),
-    ])
-
-    const iconsByList = {}
-    for (const item of itemsData ?? []) {
-      if (!iconsByList[item.list_id]) iconsByList[item.list_id] = []
-      iconsByList[item.list_id].push(item.icon)
-    }
-
-    setLists((listsData ?? []).map(l => ({ ...l, activeIcons: iconsByList[l.id] ?? [] })))
-    setLoading(false)
-  }
-
-  async function createList(e) {
-    e.preventDefault()
-    setError(null)
-
-    const { data: list, error: listError } = await supabase
-      .from('lists')
-      .insert({ name: newListName, created_by: userId })
-      .select()
-      .single()
-
-    if (listError) {
-      setError(listError.message)
-      return
-    }
-
-    const { error: memberError } = await supabase
-      .from('list_members')
-      .insert({ list_id: list.id, user_id: userId })
-
-    if (memberError) {
-      setError(memberError.message)
-      return
-    }
-
-    navigate(`/list/${list.id}`)
-  }
-
-  if (loading) return null
+  if (isLoading) return <Loading />
 
   return (
     <div className="min-h-dvh bg-gray-50 flex flex-col">
@@ -101,7 +166,7 @@ export default function ListsView() {
           </button>
         </div>
 
-        {lists.length === 0 && !creating && (
+        {lists.length === 0 && (
           <div className="text-center py-16">
             <img src={groceryBag} alt="" className="w-20 h-20 mx-auto mb-4" />
             <p className="font-semibold text-gray-700">No lists yet</p>
@@ -111,33 +176,7 @@ export default function ListsView() {
 
         <ul className="flex flex-col gap-2">
           {lists.map(list => (
-            <li
-              key={list.id}
-              className="flex items-center justify-between bg-white rounded-xl px-4 py-3 shadow-sm"
-            >
-              <div
-                className="flex-1 cursor-pointer"
-                onClick={() => navigate(`/list/${list.id}`)}
-              >
-                <p className="text-lg font-medium">{list.name}</p>
-                <AvatarGroup members={(list.list_members ?? []).map(m => ({
-                  userId: m.user_id,
-                  name: m.profiles?.name ?? '?',
-                }))} />
-                {list.activeIcons?.length > 0
-                  ? <EmojiGroup icons={list.activeIcons} className="mt-2" />
-                  : <p className="text-xs text-gray-400 mt-2 ml-1">No items</p>
-                }
-              </div>
-              {list.created_by === userId && (
-                <button
-                  onClick={() => setConfirmDelete(list)}
-                  className="text-sm text-red-400 ml-4"
-                >
-                  Delete
-                </button>
-              )}
-            </li>
+            <ListCard key={list.id} list={list} />
           ))}
         </ul>
       </div>
@@ -147,69 +186,10 @@ export default function ListsView() {
 
       {/* Sticky footer */}
       <div className="sticky bottom-0 bg-white border-t border-gray-100 px-4 py-4">
-        {creating ? (
-          <form onSubmit={createList} className="flex flex-col gap-3">
-            <input
-              type="text"
-              placeholder="List name"
-              value={newListName}
-              onChange={e => setNewListName(e.target.value)}
-              required
-              autoFocus
-              className="w-full border border-gray-300 rounded-xl px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-primary"
-            />
-            {error && <p className="text-red-500 text-sm text-center">{error}</p>}
-            <div className="flex gap-2">
-              <button
-                type="submit"
-                className="flex-1 bg-primary text-white font-semibold rounded-xl py-3"
-              >
-                Create
-              </button>
-              <button
-                type="button"
-                onClick={() => setCreating(false)}
-                className="flex-1 bg-gray-100 text-gray-600 font-semibold rounded-xl py-3"
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
-        ) : (
-          <button
-            onClick={() => setCreating(true)}
-            className="w-full bg-primary text-white font-semibold rounded-xl py-3 text-base"
-          >
-            + New List
-          </button>
-        )}
+        <button onClick={() => setCreating(true)} className="w-full bg-primary text-white font-semibold rounded-xl py-3 text-base">+ New List</button>
       </div>
 
-      {confirmDelete && (
-        <BottomSheet open onClose={() => setConfirmDelete(null)}>
-          <p className="text-base font-semibold">Delete "{confirmDelete.name}"?</p>
-          <p className="text-sm text-gray-400 -mt-2">This cannot be undone.</p>
-          <div className="flex gap-2">
-            <button
-              onClick={async () => {
-                const { error } = await supabase.from('lists').delete().eq('id', confirmDelete.id)
-                if (error) { showToast(error.message, 'error'); return }
-                setConfirmDelete(null)
-                fetchLists()
-              }}
-              className="flex-1 bg-red-500 text-white font-semibold rounded-xl py-3"
-            >
-              Delete
-            </button>
-            <button
-              onClick={() => setConfirmDelete(null)}
-              className="flex-1 bg-gray-100 text-gray-600 font-semibold rounded-xl py-3"
-            >
-              Cancel
-            </button>
-          </div>
-        </BottomSheet>
-      )}
+      {creating && <CreateList onClose={() => setCreating(false)} />}
 
       {/* Side drawer */}
       <SettingsDrawer open={settingsOpen} onClose={() => setSettingsOpen(false)} />
