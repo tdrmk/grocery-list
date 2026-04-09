@@ -1,28 +1,27 @@
 import { useState } from 'react'
+import { useMutation } from '@tanstack/react-query'
 import { supabase } from '../supabaseClient'
 
 export default function Auth() {
   const [email, setEmail] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [sent, setSent] = useState(false)
-  const [error, setError] = useState(null)
+
+  const { mutateAsync: sendMagicLink, isPending, error, isSuccess } = useMutation({
+    mutationFn: async ({ email }) => {
+      const { error } = await supabase.auth.signInWithOtp({ email })
+      if (error) throw error
+    },
+  })
 
   async function handleSubmit(e) {
     e.preventDefault()
-    setLoading(true)
-    setError(null)
-
-    const { error } = await supabase.auth.signInWithOtp({ email })
-
-    if (error) {
-      setError(error.message)
-      setLoading(false)
-    } else {
-      setSent(true)
+    try {
+      await sendMagicLink({ email })
+    } catch {
+      // error displayed via `error` below
     }
   }
 
-  if (sent) {
+  if (isSuccess) {
     return (
       <div className="min-h-dvh flex flex-col items-center justify-center px-6 text-center">
         <img src="/favicon.svg" alt="" className="w-16 h-16 mb-4" />
@@ -49,12 +48,12 @@ export default function Auth() {
         />
         <button
           type="submit"
-          disabled={loading}
+          disabled={isPending}
           className="w-full bg-primary text-white font-semibold rounded-xl py-3 text-base disabled:opacity-50"
         >
-          {loading ? 'Sending…' : 'Send magic link'}
+          {isPending ? 'Sending…' : 'Send magic link'}
         </button>
-        {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+        {error && <p className="text-red-500 text-sm text-center">{error.message}</p>}
       </form>
     </div>
   )

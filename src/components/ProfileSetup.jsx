@@ -1,25 +1,26 @@
 import { useState } from 'react'
+import { useMutation } from '@tanstack/react-query'
 import { supabase } from '../supabaseClient'
+import { useUserId } from '../UserContext'
 
-export default function ProfileSetup({ userId, onComplete }) {
+export default function ProfileSetup({ onComplete }) {
+  const userId = useUserId()
   const [name, setName] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
+
+  const { mutateAsync: createProfile, isPending, error } = useMutation({
+    mutationFn: async ({ name }) => {
+      const { error } = await supabase.from('profiles').insert({ id: userId, name })
+      if (error) throw error
+    },
+    onSuccess: onComplete,
+  })
 
   async function handleSubmit(e) {
     e.preventDefault()
-    setLoading(true)
-    setError(null)
-
-    const { error } = await supabase
-      .from('profiles')
-      .insert({ id: userId, name })
-
-    if (error) {
-      setError(error.message)
-      setLoading(false)
-    } else {
-      onComplete()
+    try {
+      await createProfile({ name })
+    } catch {
+      // error displayed via `error` below
     }
   }
 
@@ -41,12 +42,12 @@ export default function ProfileSetup({ userId, onComplete }) {
         />
         <button
           type="submit"
-          disabled={loading}
+          disabled={isPending}
           className="w-full bg-primary text-white font-semibold rounded-xl py-3 text-base disabled:opacity-50"
         >
-          {loading ? 'Saving…' : 'Continue'}
+          {isPending ? 'Saving…' : 'Continue'}
         </button>
-        {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+        {error && <p className="text-red-500 text-sm text-center">{error.message}</p>}
       </form>
     </div>
   )

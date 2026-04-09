@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from './supabaseClient'
-import { UserContext } from './UserContext'
+import { UserContext, useUserId } from './UserContext'
 import Auth from './components/Auth'
 import ProfileSetup from './components/ProfileSetup'
 import ListsView from './components/ListsView'
@@ -13,9 +13,9 @@ import JoinList from './components/JoinList'
 import { ToastProvider } from './components/commons/Toast'
 
 // Rendered only when session is confirmed. Loads the user's profile, then routes.
-function App({ session }) {
+function App() {
   const queryClient = useQueryClient()
-  const userId = session.user.id
+  const userId = useUserId()
 
   // null = new user (no profile row yet), triggers ProfileSetup
   const { data: profile, isLoading, error } = useQuery({
@@ -37,26 +37,23 @@ function App({ session }) {
   // New user: no profile row yet — collect their name first
   if (!profile) return (
     <ProfileSetup
-      userId={userId}
       onComplete={() => queryClient.invalidateQueries({ queryKey: ['profile', userId] })}
     />
   )
 
   return (
-    <UserContext.Provider value={userId}>
-      <ToastProvider>
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<ListsView />} />
-            <Route path="/list/:id" element={<ListView />} />
-            <Route path="/list/:id/add" element={<AddItem />} />
-            <Route path="/list/:id/add/custom" element={<AddCustomItem />} />
-            <Route path="/join/:token" element={<JoinList />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </BrowserRouter>
-      </ToastProvider>
-    </UserContext.Provider>
+    <ToastProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<ListsView />} />
+          <Route path="/list/:id" element={<ListView />} />
+          <Route path="/list/:id/add" element={<AddItem />} />
+          <Route path="/list/:id/add/custom" element={<AddCustomItem />} />
+          <Route path="/join/:token" element={<JoinList />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </BrowserRouter>
+    </ToastProvider>
   )
 }
 
@@ -81,5 +78,9 @@ export default function Root() {
 
   if (session === undefined) return null  // waiting for getSession()
   if (!session) return <Auth />           // logged out
-  return <App session={session} />        // logged in
+  return (
+    <UserContext.Provider value={session.user.id}>
+      <App />                              {/* logged in */}
+    </UserContext.Provider>
+  )
 }
