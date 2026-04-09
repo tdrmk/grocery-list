@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from './supabaseClient'
+import { UserContext } from './UserContext'
 import Auth from './components/Auth'
 import ProfileSetup from './components/ProfileSetup'
 import ListsView from './components/ListsView'
@@ -10,15 +12,66 @@ import AddCustomItem from './components/AddCustomItem'
 import JoinList from './components/JoinList'
 import { ToastProvider } from './components/commons/Toast'
 
-export default function App() {
+// Rendered only when session is confirmed. Loads the user's profile, then routes.
+function App({ session }) {
+  const queryClient = useQueryClient()
+  const userId = session.user.id
+
+  // null = new user (no profile row yet), triggers ProfileSetup
+  const { data: profile, isLoading, error } = useQuery({
+    queryKey: ['profile', userId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, name')
+        .eq('id', userId)
+        .maybeSingle() // returns null (not an error) when no row found
+      if (error) throw error
+      return data
+    },
+  })
+
+  if (isLoading) return null
+  if (error) return <div className="flex items-center justify-center h-screen text-gray-500">Could not load profile. Please refresh.</div>
+
+  // New user: no profile row yet — collect their name first
+  if (!profile) return (
+    <ProfileSetup
+      userId={userId}
+      onComplete={() => queryClient.invalidateQueries({ queryKey: ['profile', userId] })}
+    />
+  )
+
+  return (
+    <UserContext.Provider value={userId}>
+      <ToastProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<ListsView />} />
+            <Route path="/list/:id" element={<ListView />} />
+            <Route path="/list/:id/add" element={<AddItem />} />
+            <Route path="/list/:id/add/custom" element={<AddCustomItem />} />
+            <Route path="/join/:token" element={<JoinList />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </BrowserRouter>
+      </ToastProvider>
+    </UserContext.Provider>
+  )
+}
+
+// Auth gate: resolves session state before rendering anything.
+// undefined = still loading, null = logged out, object = logged in.
+export default function Root() {
   const [session, setSession] = useState(undefined)
-  const [profile, setProfile] = useState(undefined)
 
   useEffect(() => {
+    // Restore existing session on page load
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session)
     })
 
+    // Keep session in sync with Supabase auth events (login, logout, token refresh)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session)
     })
@@ -26,42 +79,7 @@ export default function App() {
     return () => subscription.unsubscribe()
   }, [])
 
-  async function fetchProfile(session) {
-    const { data } = await supabase
-      .from('profiles')
-      .select('id, name')
-      .eq('id', session.user.id)
-      .single()
-    setProfile(data)
-  }
-
-  useEffect(() => {
-    if (!session) {
-      setProfile(undefined)
-      return
-    }
-
-    fetchProfile(session)
-  }, [session?.user.id])
-
-  if (session === undefined) return null
-  if (!session) return <Auth />
-  if (profile === undefined) return null
-
-  if (!profile) return <ProfileSetup session={session} onComplete={() => fetchProfile(session)} />
-
-  return (
-    <ToastProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<ListsView session={session} />} />
-          <Route path="/list/:id" element={<ListView session={session} />} />
-          <Route path="/list/:id/add" element={<AddItem session={session} />} />
-          <Route path="/list/:id/add/custom" element={<AddCustomItem />} />
-          <Route path="/join/:token" element={<JoinList session={session} />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </BrowserRouter>
-    </ToastProvider>
-  )
+  if (session === undefined) return null  // waiting for getSession()
+  if (!session) return <Auth />           // logged out
+  return <App session={session} />        // logged in
 }

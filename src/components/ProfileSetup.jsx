@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { supabase } from '../supabaseClient'
 
-export default function ProfileSetup({ session, onComplete }) {
+export default function ProfileSetup({ userId, onComplete }) {
   const [name, setName] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
@@ -13,7 +13,7 @@ export default function ProfileSetup({ session, onComplete }) {
 
     const { error } = await supabase
       .from('profiles')
-      .insert({ id: session.user.id, name })
+      .insert({ id: userId, name })
 
     if (error) {
       setError(error.message)

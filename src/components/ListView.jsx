@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../supabaseClient'
+import { useUserId } from '../UserContext'
 import { AvatarGroup } from './commons/Avatar'
 import Avatar from './commons/Avatar'
 import BottomSheet from './commons/BottomSheet'
@@ -15,7 +16,8 @@ function ShareIcon() {
   )
 }
 
-export default function ListView({ session }) {
+export default function ListView() {
+  const userId = useUserId()
   const { id } = useParams()
   const navigate = useNavigate()
   const showToast = useToast()
@@ -74,7 +76,7 @@ export default function ListView({ session }) {
       .select('user_id, profiles(name)')
       .eq('list_id', id)
     setMembers(data ?? [])
-    setMyName(data?.find(m => m.user_id === session.user.id)?.profiles?.name ?? null)
+    setMyName(data?.find(m => m.user_id === userId)?.profiles?.name ?? null)
   }
 
   async function togglePurchased(item) {
@@ -334,7 +336,7 @@ export default function ListView({ session }) {
                 <Avatar name={m.profiles?.name ?? '?'} userId={m.user_id} />
                 <span className="text-base">
                   {m.profiles?.name ?? 'Unknown'}
-                  {m.user_id === session.user.id && <span className="text-gray-400 text-sm ml-1">(You)</span>}
+                  {m.user_id === userId && <span className="text-gray-400 text-sm ml-1">(You)</span>}
                 </span>
               </li>
             ))}

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../supabaseClient'
+import { useUserId } from '../UserContext'
 import groceryBag from '../assets/grocery-bag.svg'
 import IosInstallHint from './IosInstallHint'
 import { AvatarGroup } from './commons/Avatar'
@@ -18,7 +19,8 @@ function SettingsIcon() {
   )
 }
 
-export default function ListsView({ session }) {
+export default function ListsView() {
+  const userId = useUserId()
   const navigate = useNavigate()
   const showToast = useToast()
   const [lists, setLists] = useState([])
@@ -61,7 +63,7 @@ export default function ListsView({ session }) {
 
     const { data: list, error: listError } = await supabase
       .from('lists')
-      .insert({ name: newListName, created_by: session.user.id })
+      .insert({ name: newListName, created_by: userId })
       .select()
       .single()
 
@@ -72,7 +74,7 @@ export default function ListsView({ session }) {
 
     const { error: memberError } = await supabase
       .from('list_members')
-      .insert({ list_id: list.id, user_id: session.user.id })
+      .insert({ list_id: list.id, user_id: userId })
 
     if (memberError) {
       setError(memberError.message)
@@ -127,7 +129,7 @@ export default function ListsView({ session }) {
                   : <p className="text-xs text-gray-400 mt-2 ml-1">No items</p>
                 }
               </div>
-              {list.created_by === session.user.id && (
+              {list.created_by === userId && (
                 <button
                   onClick={() => setConfirmDelete(list)}
                   className="text-sm text-red-400 ml-4"
