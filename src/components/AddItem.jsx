@@ -2,7 +2,27 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../supabaseClient'
 import { useToast } from './commons/Toast'
-import SwipeableRow from './commons/SwipeableRow'
+import ItemRow from './commons/ItemRow'
+
+function CategorySection({ title, children }) {
+  const [collapsed, setCollapsed] = useState(false)
+  return (
+    <div>
+      <button
+        onClick={() => setCollapsed(c => !c)}
+        className="w-full flex items-center justify-between px-7 pt-3 pb-1 cursor-pointer"
+      >
+        <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">{title}</span>
+        <span className="text-gray-400 text-xl">{collapsed ? '▸' : '▾'}</span>
+      </button>
+      {!collapsed && (
+        <ul className="px-4 flex flex-col gap-1">
+          {children}
+        </ul>
+      )}
+    </div>
+  )
+}
 
 export default function AddItem() {
   const { id: listId } = useParams()
@@ -58,16 +78,6 @@ export default function AddItem() {
     setAdding(null)
   }
 
-  const [collapsedCategories, setCollapsedCategories] = useState(new Set())
-
-  function toggleCategory(category) {
-    setCollapsedCategories(prev => {
-      const next = new Set(prev)
-      next.has(category) ? next.delete(category) : next.add(category)
-      return next
-    })
-  }
-
   const filtered = search.trim()
     ? catalog.filter(item =>
         item.name.toLowerCase().includes(search.toLowerCase())
@@ -112,139 +122,70 @@ export default function AddItem() {
       </div>
 
       {/* Recently purchased */}
-      {!search.trim() && recentItems.length > 0 && (() => {
-        const isCollapsed = collapsedCategories.has('__recent__')
-        return (
-          <div>
-            <button
-              onClick={() => toggleCategory('__recent__')}
-              className="w-full flex items-center justify-between px-7 pt-3 pb-1 cursor-pointer"
-            >
-              <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Recently purchased</span>
-              <span className="text-gray-400 text-xl">{isCollapsed ? '▸' : '▾'}</span>
-            </button>
-            {!isCollapsed && (
-              <ul className="px-4 flex flex-col gap-1">
-                {recentItems.map(item => {
-                  const isAdded = item.catalog_id ? addedIds.has(item.catalog_id) : false
-                  const isPurchased = item.catalog_id ? purchasedIds.has(item.catalog_id) : false
-                  const isAdding = adding === item.catalog_id
-                  return (
-                    <li
-                      key={item.catalog_id ?? item.name}
-                      onClick={() => !isAdded && !isPurchased && addItem({ id: item.catalog_id, ...item })}
-                      className={`flex items-center gap-3 rounded-xl px-4 py-3 shadow-sm transition-colors ${isAdded ? 'bg-rose-50 cursor-default' : isPurchased ? 'bg-green-50 cursor-default' : 'bg-gray-50 active:bg-gray-100 cursor-pointer'} ${isAdding ? 'opacity-50' : ''}`}
-                    >
-                      <span className="text-xl">{item.icon}</span>
-                      <span className="flex-1 text-base">{item.name}</span>
-                      {item.count > 1 && <span className="text-gray-300 text-sm">×{item.count}</span>}
-                      <div className="w-5 h-5 flex items-center justify-center shrink-0">
-                        {isAdded
-                          ? <span className="text-sm">🛒</span>
-                          : isPurchased
-                          ? <span className="text-primary text-sm font-semibold">✓</span>
-                          : <span className="text-gray-300 text-xl">+</span>
-                        }
-                      </div>
-                    </li>
-                  )
-                })}
-              </ul>
-            )}
-          </div>
-        )
-      })()}
+      {!search.trim() && recentItems.length > 0 && (
+        <CategorySection title="Recently purchased">
+          {recentItems.map(item => {
+            const isAdded = item.catalog_id ? addedIds.has(item.catalog_id) : false
+            const isPurchased = item.catalog_id ? purchasedIds.has(item.catalog_id) : false
+            return (
+              <ItemRow
+                key={item.catalog_id ?? item.name}
+                item={item}
+                status={isAdded ? 'added' : isPurchased ? 'purchased' : undefined}
+                disabled={isAdded || isPurchased}
+                loading={adding === item.catalog_id}
+                trailing="badge"
+                onClick={() => addItem({ id: item.catalog_id, ...item })}
+              />
+            )
+          })}
+        </CategorySection>
+      )}
 
       {/* Catalog */}
-      {Object.entries(grouped).map(([category, items]) => {
-        const isCollapsed = collapsedCategories.has(category)
-        return (
-          <div key={category}>
-            <button
-              onClick={() => toggleCategory(category)}
-              className="w-full flex items-center justify-between px-7 pt-3 pb-1 cursor-pointer"
-            >
-              <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">{category}</span>
-              <span className="text-gray-400 text-xl">{isCollapsed ? '▸' : '▾'}</span>
-            </button>
-            {!isCollapsed && (
-              <ul className="px-4 flex flex-col gap-1">
-                {items.map(item => {
-                  const isAdded = addedIds.has(item.id)
-                  const isPurchased = purchasedIds.has(item.id)
-                  const isAdding = adding === item.id
-                  return (
-                    <li
-                      key={item.id}
-                      onClick={() => !isAdded && !isPurchased && addItem(item)}
-                      className={`flex items-center gap-3 rounded-xl px-4 py-3 shadow-sm transition-colors ${isAdded ? 'bg-rose-50 cursor-default' : isPurchased ? 'bg-green-50 cursor-default' : 'bg-gray-50 active:bg-gray-100 cursor-pointer'} ${isAdding ? 'opacity-50' : ''}`}
-                    >
-                      <span className="text-xl">{item.icon}</span>
-                      <span className="flex-1 text-base">{item.name}</span>
-                      <div className="w-5 h-5 flex items-center justify-center shrink-0">
-                        {isAdded
-                          ? <span className="text-sm">🛒</span>
-                          : isPurchased
-                          ? <span className="text-primary text-sm font-semibold">✓</span>
-                          : <span className="text-gray-300 text-xl">+</span>
-                        }
-                      </div>
-                    </li>
-                  )
-                })}
-              </ul>
-            )}
-          </div>
-        )
-      })}
+      {Object.entries(grouped).map(([category, items]) => (
+        <CategorySection key={category} title={category}>
+          {items.map(item => {
+            const isAdded = addedIds.has(item.id)
+            const isPurchased = purchasedIds.has(item.id)
+            return (
+              <ItemRow
+                key={item.id}
+                item={item}
+                status={isAdded ? 'added' : isPurchased ? 'purchased' : undefined}
+                disabled={isAdded || isPurchased}
+                loading={adding === item.id}
+                trailing="badge"
+                onClick={() => addItem(item)}
+              />
+            )
+          })}
+        </CategorySection>
+      ))}
 
       {/* My items */}
-      {filteredOwn.length > 0 && (() => {
-        const isCollapsed = collapsedCategories.has('__own__')
-        return (
-          <div>
-            <button
-              onClick={() => toggleCategory('__own__')}
-              className="w-full flex items-center justify-between px-7 pt-3 pb-1 cursor-pointer"
-            >
-              <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">My items</span>
-              <span className="text-gray-400 text-xl">{isCollapsed ? '▸' : '▾'}</span>
-            </button>
-            {!isCollapsed && (
-              <ul className="px-4 flex flex-col gap-1">
-                {filteredOwn.map(item => {
-                  const isAdded = addedIds.has(item.id)
-                  const isPurchased = purchasedIds.has(item.id)
-                  const isAdding = adding === item.id
-                  return (
-                    <li key={item.id} className="rounded-xl overflow-hidden shadow-sm">
-                      <SwipeableRow
-                        onClick={() => !isAdded && !isPurchased && addItem(item)}
-                        actions={[
-                          { icon: '✏️', label: 'Edit', color: 'bg-blue-500', onAction: () => navigate(`/list/${listId}/add/custom/edit`, { state: { existingItem: item } }) },
-                        ]}
-                      >
-                        <div className={`flex items-center gap-3 px-4 py-3 transition-colors ${isAdded ? 'bg-rose-50' : isPurchased ? 'bg-green-50' : 'bg-gray-50 active:bg-gray-100'} ${isAdding ? 'opacity-50' : ''}`}>
-                          <span className="text-xl">{item.icon}</span>
-                          <span className="flex-1 text-base">{item.name}</span>
-                          <div className="w-5 h-5 flex items-center justify-center shrink-0">
-                            {isAdded
-                              ? <span className="text-sm">🛒</span>
-                              : isPurchased
-                              ? <span className="text-primary text-sm font-semibold">✓</span>
-                              : <span className="text-gray-300 text-xl">+</span>
-                            }
-                          </div>
-                        </div>
-                      </SwipeableRow>
-                    </li>
-                  )
-                })}
-              </ul>
-            )}
-          </div>
-        )
-      })()}
+      {filteredOwn.length > 0 && (
+        <CategorySection title="My items">
+          {filteredOwn.map(item => {
+            const isAdded = addedIds.has(item.id)
+            const isPurchased = purchasedIds.has(item.id)
+            return (
+              <ItemRow
+                key={item.id}
+                item={item}
+                status={isAdded ? 'added' : isPurchased ? 'purchased' : undefined}
+                disabled={isAdded || isPurchased}
+                loading={adding === item.id}
+                trailing="badge"
+                onClick={() => addItem(item)}
+                actions={[
+                  { icon: '✏️', label: 'Edit', color: 'bg-blue-500', onAction: () => navigate(`/list/${listId}/add/custom/edit`, { state: { existingItem: item } }) },
+                ]}
+              />
+            )
+          })}
+        </CategorySection>
+      )}
 
       {filtered.length === 0 && search.trim() && (
         <div className="px-4 pt-4">

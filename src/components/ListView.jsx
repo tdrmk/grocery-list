@@ -6,7 +6,7 @@ import { AvatarGroup } from './commons/Avatar'
 import Avatar from './commons/Avatar'
 import BottomSheet from './commons/BottomSheet'
 import { useToast } from './commons/Toast'
-import SwipeableRow from './commons/SwipeableRow'
+import ItemRow from './commons/ItemRow'
 
 function ShareIcon() {
   return (
@@ -219,22 +219,16 @@ export default function ListView() {
                 <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide px-1 mb-1">{category}</p>
                 <ul className="flex flex-col gap-1">
                   {categoryItems.map(item => (
-                    <li key={item.id} className="rounded-xl overflow-hidden bg-rose-50 shadow-sm">
-                      <SwipeableRow
-                        actions={[
-                          { icon: '✏️', label: 'Edit', color: 'bg-blue-400', onAction: () => openEdit(item) },
-                          { icon: '🗑️', label: 'Delete', color: 'bg-red-400', onAction: () => deleteItem(item) },
-                        ]}
-                        onClick={() => togglePurchased(item)}
-                      >
-                        <div className="flex items-center gap-3 pl-4 pr-8 py-3 active:bg-rose-100 cursor-pointer select-none">
-                          <span className="text-xl">{item.icon}</span>
-                          <span className="flex-1 text-base">{item.name}</span>
-                          {item.quantity && <span className="text-sm text-gray-400">{item.quantity}</span>}
-                          {item.notes && <span className="text-sm text-gray-300 italic">{item.notes}</span>}
-                        </div>
-                      </SwipeableRow>
-                    </li>
+                    <ItemRow
+                      key={item.id}
+                      item={item}
+                      status="added"
+                      onClick={() => togglePurchased(item)}
+                      actions={[
+                        { icon: '✏️', label: 'Edit', color: 'bg-blue-400', onAction: () => openEdit(item) },
+                        { icon: '🗑️', label: 'Delete', color: 'bg-red-400', onAction: () => deleteItem(item) },
+                      ]}
+                    />
                   ))}
                 </ul>
               </div>
@@ -252,19 +246,15 @@ export default function ListView() {
             </div>
             <ul className="flex flex-col gap-1">
               {purchasedItems.map(item => (
-                <li key={item.id} className="rounded-xl overflow-hidden bg-green-50 shadow-sm">
-                  <SwipeableRow
-                    actions={[
-                      { icon: '✕', label: 'Clear', color: 'bg-gray-400', onAction: () => clearItem(item) },
-                    ]}
-                    onClick={() => togglePurchased(item)}
-                  >
-                    <div className="flex items-center gap-3 pl-4 pr-8 py-3 active:bg-green-100 cursor-pointer select-none">
-                      <span className="text-xl">{item.icon}</span>
-                      <span className="flex-1 text-base">{item.name}</span>
-                    </div>
-                  </SwipeableRow>
-                </li>
+                <ItemRow
+                  key={item.id}
+                  item={item}
+                  status="purchased"
+                  onClick={() => togglePurchased(item)}
+                  actions={[
+                    { icon: '✕', label: 'Clear', color: 'bg-gray-400', onAction: () => clearItem(item) },
+                  ]}
+                />
               ))}
             </ul>
             <button
