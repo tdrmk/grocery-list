@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { supabase } from '../supabaseClient'
 import { useUserId } from '../UserContext'
 import { AvatarGroup } from './commons/Avatar'
@@ -7,6 +8,7 @@ import Avatar from './commons/Avatar'
 import BottomSheet from './commons/BottomSheet'
 import { useToast } from './commons/Toast'
 import ItemRow from './commons/ItemRow'
+import Spinner from './commons/Spinner'
 
 function ShareIcon() {
   return (
@@ -16,20 +18,135 @@ function ShareIcon() {
   )
 }
 
-export default function ListView() {
+function ShareButton({ listId, listName }) {
   const userId = useUserId()
+  const showToast = useToast()
+  const { data: profile } = useQuery({ queryKey: ['profile', userId] })
+  const { mutateAsync, isPending } = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase
+        .from('share_links')
+        .insert({ list_id: listId })
+        .select('token')
+        .single()
+      if (error || !data) throw new Error(error?.message ?? 'Could not create share link')
+      return data.token
+    },
+    onError: (error) => showToast(error.message, 'error'),
+    onSuccess: async (token) => {
+      const url = `${window.location.origin}/join/${token}`
+      const title = `${profile?.name ? `${profile.name} invited you to join` : 'Join'} "${listName}" on Grocery List`
+      if (navigator.share) {
+        await navigator.share({ title, url })
+      } else {
+        await navigator.clipboard.writeText(url)
+        showToast('Link copied!')
+      }
+    },
+  })
+
+  async function shareLink() {
+    await mutateAsync()
+  }
+
+  return (
+    <button
+      onClick={shareLink}
+      disabled={isPending}
+      aria-label="Share list"
+      className="text-primary rounded-full w-9 h-9 flex items-center justify-center disabled:opacity-50"
+    >
+      {isPending ? <Spinner className="w-4 h-4" /> : <ShareIcon />}
+    </button>
+  )
+}
+
+function MembersSheet({ members, onClose, list }) {
+  const userId = useUserId()
+  return (
+    <BottomSheet open onClose={onClose}>
+      <div className="flex items-center justify-between mb-1">
+        <p className="font-semibold text-base">Members</p>
+        <ShareButton listId={list.id} listName={list.name} />
+      </div>
+      <ul className="flex flex-col gap-3">
+        {members.map(m => (
+          <li key={m.user_id} className="flex items-center gap-3">
+            <Avatar name={m.profiles?.name ?? '?'} userId={m.user_id} />
+            <span className="text-base">
+              {m.profiles?.name ?? 'Unknown'}
+              {m.user_id === userId && <span className="text-gray-400 text-sm ml-1">(You)</span>}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </BottomSheet>
+  )
+}
+
+function EditItemSheet({ item, onClose }) {
+  const showToast = useToast()
+  const [quantity, setQuantity] = useState(item.quantity ?? '')
+  const [notes, setNotes] = useState(item.notes ?? '')
+  const { mutateAsync: saveEdit, isPending } = useMutation({
+    mutationFn: async ({ quantity, notes }) => {
+      const { error } = await supabase
+        .from('items')
+        .update({ quantity: quantity || null, notes: notes || null })
+        .eq('id', item.id)
+      if (error) throw error
+    },
+    onError: (error) => showToast(error.message, 'error'),
+    onSuccess: () => onClose(),
+  })
+
+  async function handleSave() {
+    await saveEdit({ quantity, notes })
+  }
+
+  return (
+    <BottomSheet open onClose={onClose}>
+      <div className="flex items-center gap-2 mb-1">
+        <span className="text-xl">{item.icon}</span>
+        <span className="font-semibold text-base">{item.name}</span>
+      </div>
+      <div className="flex flex-col gap-3">
+        <input
+          type="text"
+          placeholder="Quantity (e.g. 2x, 500g)"
+          value={quantity}
+          onChange={e => setQuantity(e.target.value)}
+          className="w-full bg-gray-100 rounded-xl px-4 py-3 text-base focus:outline-none"
+        />
+        <input
+          type="text"
+          placeholder="Notes (e.g. organic, the blue package)"
+          value={notes}
+          onChange={e => setNotes(e.target.value)}
+          className="w-full bg-gray-100 rounded-xl px-4 py-3 text-base focus:outline-none"
+        />
+      </div>
+      <button
+        onClick={handleSave}
+        disabled={isPending}
+        className="w-full bg-primary text-white font-semibold rounded-xl py-3 text-base disabled:opacity-50"
+      >
+        {isPending ? <span className="flex items-center justify-center gap-2"><Spinner className="w-4 h-4" />Saving…</span> : 'Save'}
+      </button>
+    </BottomSheet>
+  )
+}
+
+export default function ListView() {
   const { id } = useParams()
   const navigate = useNavigate()
   const showToast = useToast()
   const [list, setList] = useState(null)
   const [members, setMembers] = useState([])
-  const [myName, setMyName] = useState(null)
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
   const [showMembers, setShowMembers] = useState(false)
   const [editingItem, setEditingItem] = useState(null)
-  const [editQuantity, setEditQuantity] = useState('')
-  const [editNotes, setEditNotes] = useState('')
 
   useEffect(() => {
     fetchList()
@@ -76,7 +193,6 @@ export default function ListView() {
       .select('user_id, profiles(name)')
       .eq('list_id', id)
     setMembers(data ?? [])
-    setMyName(data?.find(m => m.user_id === userId)?.profiles?.name ?? null)
   }
 
   async function togglePurchased(item) {
@@ -119,38 +235,6 @@ export default function ListView() {
     if (error) showToast(error.message, 'error')
   }
 
-  async function shareList() {
-    const { data, error } = await supabase
-      .from('share_links')
-      .insert({ list_id: id })
-      .select('token')
-      .single()
-    if (error || !data) { showToast(error?.message ?? 'Could not create share link', 'error'); return }
-    const url = `${window.location.origin}/join/${data.token}`
-    const title = `${myName ? `${myName} invited you to join` : 'Join'} "${list.name}" on Grocery List`
-    if (navigator.share) {
-      await navigator.share({ title, url })
-    } else {
-      await navigator.clipboard.writeText(url)
-      showToast('Link copied!')
-    }
-  }
-
-  function openEdit(item) {
-    setEditingItem(item)
-    setEditQuantity(item.quantity ?? '')
-    setEditNotes(item.notes ?? '')
-  }
-
-  async function saveEdit() {
-    const { error } = await supabase
-      .from('items')
-      .update({ quantity: editQuantity || null, notes: editNotes || null })
-      .eq('id', editingItem.id)
-    if (error) { showToast(error.message, 'error'); return }
-    setEditingItem(null)
-  }
-
   if (loading) return null
 
   if (!list) return (
@@ -185,13 +269,7 @@ export default function ListView() {
               </button>
             )}
           </div>
-          <button
-            onClick={shareList}
-            aria-label="Share list"
-            className="text-primary rounded-full w-9 h-9 flex items-center justify-center"
-          >
-              <ShareIcon />
-          </button>
+          <ShareButton listId={id} listName={list.name} />
         </div>
       </div>
 
@@ -225,7 +303,7 @@ export default function ListView() {
                       status="added"
                       onClick={() => togglePurchased(item)}
                       actions={[
-                        { icon: '✏️', label: 'Edit', color: 'bg-blue-400', onAction: () => openEdit(item) },
+                        { icon: '✏️', label: 'Edit', color: 'bg-blue-400', onAction: () => setEditingItem(item) },
                         { icon: '🗑️', label: 'Delete', color: 'bg-red-400', onAction: () => deleteItem(item) },
                       ]}
                     />
@@ -279,59 +357,14 @@ export default function ListView() {
 
       {/* Edit bottom sheet */}
       {editingItem && (
-        <BottomSheet open onClose={() => setEditingItem(null)}>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-xl">{editingItem.icon}</span>
-            <span className="font-semibold text-base">{editingItem.name}</span>
-          </div>
-          <div className="flex flex-col gap-3">
-            <input
-              type="text"
-              placeholder="Quantity (e.g. 2x, 500g)"
-              value={editQuantity}
-              onChange={e => setEditQuantity(e.target.value)}
-              className="w-full bg-gray-100 rounded-xl px-4 py-3 text-base focus:outline-none"
-            />
-            <input
-              type="text"
-              placeholder="Notes (e.g. organic, the blue package)"
-              value={editNotes}
-              onChange={e => setEditNotes(e.target.value)}
-              className="w-full bg-gray-100 rounded-xl px-4 py-3 text-base focus:outline-none"
-            />
-          </div>
-          <button
-            onClick={saveEdit}
-            className="w-full bg-primary text-white font-semibold rounded-xl py-3 text-base"
-          >
-            Save
-          </button>
-        </BottomSheet>
+        <EditItemSheet item={editingItem} onClose={() => setEditingItem(null)} />
       )}
       {showMembers && (
-        <BottomSheet open onClose={() => setShowMembers(false)}>
-          <div className="flex items-center justify-between mb-1">
-            <p className="font-semibold text-base">Members</p>
-            <button
-              onClick={() => shareList()}
-              aria-label="Share list"
-              className="text-primary rounded-full w-9 h-9 flex items-center justify-center"
-            >
-              <ShareIcon />
-            </button>
-          </div>
-          <ul className="flex flex-col gap-3">
-            {members.map(m => (
-              <li key={m.user_id} className="flex items-center gap-3">
-                <Avatar name={m.profiles?.name ?? '?'} userId={m.user_id} />
-                <span className="text-base">
-                  {m.profiles?.name ?? 'Unknown'}
-                  {m.user_id === userId && <span className="text-gray-400 text-sm ml-1">(You)</span>}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </BottomSheet>
+        <MembersSheet
+          members={members}
+          onClose={() => setShowMembers(false)}
+          list={list}
+        />
       )}
     </div>
   )
