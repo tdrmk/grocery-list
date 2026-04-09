@@ -6,14 +6,17 @@ alter table catalog     enable row level security;
 alter table items       enable row level security;
 alter table share_links enable row level security;
 
--- Realtime: publish items table
+-- Realtime: publish tables so clients receive live change events
 -- https://supabase.com/docs/guides/realtime/postgres-changes
+alter publication supabase_realtime add table lists;
+alter publication supabase_realtime add table list_members;
 alter publication supabase_realtime add table items;
 
--- Realtime: full replica identity so DELETE events include the old row
--- (required for list_id filter to match and payload.old to be available)
--- https://supabase.com/docs/guides/realtime/postgres-changes
-alter table items replica identity full;
+-- Full replica identity so DELETE events include the old row
+-- (required for payload.old to be available and list_id filter to match)
+alter table lists       replica identity full;
+alter table list_members replica identity full;
+alter table items       replica identity full;
 
 -- ============================================================
 -- Indexes

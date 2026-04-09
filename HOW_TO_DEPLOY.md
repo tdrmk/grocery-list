@@ -70,11 +70,11 @@ Set the JWT expiry to 180 days so users stay logged in.
 
 ## 4. Supabase — Enable Realtime
 
-Real-time sync (changes appear on all connected phones instantly) requires the `items` table to be added to the Realtime publication.
+Real-time sync (changes appear on all connected phones instantly) requires the `lists`, `list_members`, and `items` tables to be added to the Realtime publication.
 
 1. Go to **Database → Publications** — **not** "Database → Replication" (that's a different section for read replicas)
 2. Click `supabase_realtime`
-3. Toggle on the `items` table
+3. Toggle on the `lists`, `list_members`, and `items` tables
 
 > **Symptom if missed**: WebSocket connects fine (you'll see `phx_reply ok` in the network tab) but no events fire when items are added or toggled.
 
