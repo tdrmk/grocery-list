@@ -221,7 +221,7 @@ export default function AddItem() {
                       <SwipeableRow
                         onClick={() => !isAdded && !isPurchased && addItem(item)}
                         actions={[
-                          { icon: '✏️', label: 'Edit', color: 'bg-blue-500', onAction: () => navigate(`/list/${listId}/add/custom`, { state: { existingItem: item } }) },
+                          { icon: '✏️', label: 'Edit', color: 'bg-blue-500', onAction: () => navigate(`/list/${listId}/add/custom/edit`, { state: { existingItem: item } }) },
                         ]}
                       >
                         <div className={`flex items-center gap-3 px-4 py-3 transition-colors ${isAdded ? 'bg-rose-50' : isPurchased ? 'bg-green-50' : 'bg-gray-50 active:bg-gray-100'} ${isAdding ? 'opacity-50' : ''}`}>

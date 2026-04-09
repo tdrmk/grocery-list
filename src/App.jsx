@@ -8,7 +8,7 @@ import ProfileSetup from './components/ProfileSetup'
 import ListsView from './components/ListsView'
 import ListView from './components/ListView'
 import AddItem from './components/AddItem'
-import AddCustomItem from './components/AddCustomItem'
+import { AddCustomItem, EditCustomItem } from './components/ManageCustomItem'
 import JoinList from './components/JoinList'
 import { ToastProvider } from './components/commons/Toast'
 import Loading from './components/commons/Loading'
@@ -50,6 +50,7 @@ function App() {
           <Route path="/list/:id" element={<ListView />} />
           <Route path="/list/:id/add" element={<AddItem />} />
           <Route path="/list/:id/add/custom" element={<AddCustomItem />} />
+          <Route path="/list/:id/add/custom/edit" element={<EditCustomItem />} />
           <Route path="/join/:token" element={<JoinList />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
