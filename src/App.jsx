@@ -13,35 +13,8 @@ import JoinList from './components/JoinList'
 import { ToastProvider } from './components/commons/Toast'
 import Loading from './components/commons/Loading'
 
-// Rendered only when session is confirmed. Loads the user's profile, then routes.
+// Rendered only when profile is confirmed. Sets up routes.
 function App() {
-  const queryClient = useQueryClient()
-  const userId = useUserId()
-
-  // null = new user (no profile row yet), triggers ProfileSetup
-  const { data: profile, isLoading, error } = useQuery({
-    queryKey: ['profile', userId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('id, name')
-        .eq('id', userId)
-        .maybeSingle() // returns null (not an error) when no row found
-      if (error) throw error
-      return data
-    },
-  })
-
-  if (isLoading) return <Loading />
-  if (error) return <div className="flex items-center justify-center h-screen text-gray-500">Could not load profile. Please refresh.</div>
-
-  // New user: no profile row yet — collect their name first
-  if (!profile) return (
-    <ProfileSetup
-      onComplete={() => queryClient.invalidateQueries({ queryKey: ['profile', userId] })}
-    />
-  )
-
   return (
     <ToastProvider>
       <BrowserRouter>
@@ -59,9 +32,40 @@ function App() {
   )
 }
 
+// Rendered only when session is confirmed. Loads the user's profile, then routes.
+function ProfileCheck() {
+  const queryClient = useQueryClient()
+  const userId = useUserId()
+
+  // null = new user (no profile row yet), triggers ProfileSetup
+  const { data: profile, isLoading, error } = useQuery({
+    queryKey: ['profile', userId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, name')
+        .eq('id', userId)
+        .maybeSingle()
+      if (error) throw error
+      return data
+    },
+  })
+
+  if (isLoading) return <Loading />
+  if (error) return <div className="flex items-center justify-center h-screen text-gray-500">Could not load profile. Please refresh.</div>
+
+  if (!profile) return (
+    <ProfileSetup
+      onComplete={() => queryClient.invalidateQueries({ queryKey: ['profile', userId] })}
+    />
+  )
+
+  return <App />
+}
+
 // Auth gate: resolves session state before rendering anything.
 // undefined = still loading, null = logged out, object = logged in.
-export default function Root() {
+export default function AuthCheck() {
   const [session, setSession] = useState(undefined)
 
   useEffect(() => {
@@ -82,7 +86,7 @@ export default function Root() {
   if (!session) return <Auth />           // logged out
   return (
     <UserContext.Provider value={session.user.id}>
-      <App />                              {/* logged in */}
+      <ProfileCheck />                     {/* logged in */}
     </UserContext.Provider>
   )
 }
