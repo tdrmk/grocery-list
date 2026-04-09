@@ -21,6 +21,7 @@ export default function ListView({ session }) {
   const showToast = useToast()
   const [list, setList] = useState(null)
   const [members, setMembers] = useState([])
+  const [myName, setMyName] = useState(null)
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
   const [showMembers, setShowMembers] = useState(false)
@@ -73,6 +74,7 @@ export default function ListView({ session }) {
       .select('user_id, profiles(name)')
       .eq('list_id', id)
     setMembers(data ?? [])
+    setMyName(data?.find(m => m.user_id === session.user.id)?.profiles?.name ?? null)
   }
 
   async function togglePurchased(item) {
@@ -127,8 +129,13 @@ export default function ListView({ session }) {
       .single()
     if (error || !data) { showToast(`Error: ${error?.message ?? 'Could not create share link'}`); return }
     const url = `${window.location.origin}/join/${data.token}`
-    await navigator.clipboard.writeText(url)
-    showToast('Link copied!')
+    const title = `${myName ? `${myName} invited you to join` : 'Join'} "${list.name}" on Grocery List`
+    if (navigator.share) {
+      await navigator.share({ title, url })
+    } else {
+      await navigator.clipboard.writeText(url)
+      showToast('Link copied!')
+    }
   }
 
   function openEdit(item) {
