@@ -84,20 +84,17 @@ export default function ListView({ session }) {
       purchased_at: newStatus === 'purchased' ? new Date().toISOString() : null
     }
     const { error } = await supabase.from('items').update(updates).eq('id', item.id)
-    if (error) { showToast(`Error: ${error.message}`); return }
-    fetchItems()
+    if (error) showToast(`Error: ${error.message}`)
   }
 
   async function clearItem(item) {
     const { error } = await supabase.from('items').update({ status: 'cleared' }).eq('id', item.id)
-    if (error) { showToast(`Error: ${error.message}`); return }
-    fetchItems()
+    if (error) showToast(`Error: ${error.message}`)
   }
 
   async function deleteItem(item) {
     const { error } = await supabase.from('items').delete().eq('id', item.id)
-    if (error) { showToast(`Error: ${error.message}`); return }
-    fetchItems()
+    if (error) showToast(`Error: ${error.message}`)
   }
 
   async function autoClearStale() {
@@ -117,8 +114,7 @@ export default function ListView({ session }) {
       .update({ status: 'cleared' })
       .eq('list_id', id)
       .eq('status', 'purchased')
-    if (error) { showToast(`Error: ${error.message}`); return }
-    fetchItems()
+    if (error) showToast(`Error: ${error.message}`)
   }
 
   async function shareList() {

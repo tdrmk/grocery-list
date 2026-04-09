@@ -6,6 +6,15 @@ alter table catalog     enable row level security;
 alter table items       enable row level security;
 alter table share_links enable row level security;
 
+-- Realtime: publish items table
+-- https://supabase.com/docs/guides/realtime/postgres-changes
+alter publication supabase_realtime add table items;
+
+-- Realtime: full replica identity so DELETE events include the old row
+-- (required for list_id filter to match and payload.old to be available)
+-- https://supabase.com/docs/guides/realtime/postgres-changes
+alter table items replica identity full;
+
 -- ============================================================
 -- Indexes
 -- Policy filter columns need indexes to avoid full table scans.
