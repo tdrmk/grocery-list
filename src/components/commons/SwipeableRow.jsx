@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 const AUTO_CLOSE_MS = 8000
 const BUTTON_WIDTH = 64 // w-16 = 4rem = 64px
@@ -13,6 +13,8 @@ export default function SwipeableRow({ actions, onClick, children }) {
   const isDragging = useRef(false)
   const isOpen = useRef(false)
   const timeoutRef = useRef(null)
+
+  useEffect(() => () => clearTimeout(timeoutRef.current), [])
 
   const maxWidth = actions.length * BUTTON_WIDTH
 
