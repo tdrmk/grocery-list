@@ -11,6 +11,7 @@ import AddItem from './components/AddItem'
 import AddCustomItem from './components/AddCustomItem'
 import JoinList from './components/JoinList'
 import { ToastProvider } from './components/commons/Toast'
+import Loading from './components/commons/Loading'
 
 // Rendered only when session is confirmed. Loads the user's profile, then routes.
 function App() {
@@ -31,7 +32,7 @@ function App() {
     },
   })
 
-  if (isLoading) return null
+  if (isLoading) return <Loading />
   if (error) return <div className="flex items-center justify-center h-screen text-gray-500">Could not load profile. Please refresh.</div>
 
   // New user: no profile row yet — collect their name first
@@ -76,7 +77,7 @@ export default function Root() {
     return () => subscription.unsubscribe()
   }, [])
 
-  if (session === undefined) return null  // waiting for getSession()
+  if (session === undefined) return <Loading />  // waiting for getSession()
   if (!session) return <Auth />           // logged out
   return (
     <UserContext.Provider value={session.user.id}>

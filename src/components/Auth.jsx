@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { supabase } from '../supabaseClient'
+import Spinner from './commons/Spinner'
 
 export default function Auth() {
   const [email, setEmail] = useState('')
@@ -51,7 +52,7 @@ export default function Auth() {
           disabled={isPending}
           className="w-full bg-primary text-white font-semibold rounded-xl py-3 text-base disabled:opacity-50"
         >
-          {isPending ? 'Sending…' : 'Send magic link'}
+          {isPending ? <span className="flex items-center justify-center gap-2"><Spinner className="w-5 h-5" />Sending…</span> : 'Send magic link'}
         </button>
         {error && <p className="text-red-500 text-sm text-center">{error.message}</p>}
       </form>

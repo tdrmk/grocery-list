@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { supabase } from '../supabaseClient'
 import { useUserId } from '../UserContext'
+import Spinner from './commons/Spinner'
 
 export default function ProfileSetup({ onComplete }) {
   const userId = useUserId()
@@ -45,7 +46,7 @@ export default function ProfileSetup({ onComplete }) {
           disabled={isPending}
           className="w-full bg-primary text-white font-semibold rounded-xl py-3 text-base disabled:opacity-50"
         >
-          {isPending ? 'Saving…' : 'Continue'}
+          {isPending ? <span className="flex items-center justify-center gap-2"><Spinner className="w-5 h-5" />Saving…</span> : 'Continue'}
         </button>
         {error && <p className="text-red-500 text-sm text-center">{error.message}</p>}
       </form>
