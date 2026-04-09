@@ -9,6 +9,7 @@ import BottomSheet from './commons/BottomSheet'
 import { useToast } from './commons/Toast'
 import ItemRow from './commons/ItemRow'
 import Spinner from './commons/Spinner'
+import Loading from './commons/Loading'
 
 function ShareIcon() {
   return (
@@ -61,8 +62,9 @@ function ShareButton({ listId, listName }) {
   )
 }
 
-function MembersSheet({ members, onClose, list }) {
+function MembersSheet({ onClose, list }) {
   const userId = useUserId()
+  const members = list.list_members ?? []
   return (
     <BottomSheet open onClose={onClose}>
       <div className="flex items-center justify-between mb-1">
@@ -137,105 +139,130 @@ function EditItemSheet({ item, onClose }) {
   )
 }
 
+function ActiveItemRow({ item }) {
+  const showToast = useToast()
+  const [editing, setEditing] = useState(false)
+  const { mutateAsync: setItemPurchased, isPending: purchasing } = useMutation({
+    mutationFn: async ({ id }) => {
+      const { error } = await supabase.from('items').update({
+        status: 'purchased',
+        purchased_at: new Date().toISOString(),
+      }).eq('id', id)
+      if (error) throw error
+    },
+    onError: (error) => showToast(error.message, 'error'),
+  })
+  const { mutateAsync: deleteItem, isPending: deleting } = useMutation({
+    mutationFn: async ({ id }) => {
+      const { error } = await supabase.from('items').delete().eq('id', id)
+      if (error) throw error
+    },
+    onError: (error) => showToast(error.message, 'error'),
+  })
+
+  async function handleToggle() { await setItemPurchased({ id: item.id }) }
+  async function handleDelete() { await deleteItem({ id: item.id }) }
+
+  return (
+    <>
+      <ItemRow
+        item={item}
+        status="added"
+        loading={purchasing || deleting}
+        onClick={handleToggle}
+        actions={[
+          { icon: '✏️', label: 'Edit', color: 'bg-blue-400', onAction: () => setEditing(true) },
+          { icon: '🗑️', label: 'Delete', color: 'bg-red-400', onAction: handleDelete, loading: deleting },
+        ]}
+      />
+      {editing && <EditItemSheet item={item} onClose={() => setEditing(false)} />}
+    </>
+  )
+}
+
+function PurchasedItemRow({ item }) {
+  const showToast = useToast()
+  const { mutateAsync: setItemActive, isPending: activating } = useMutation({
+    mutationFn: async ({ id }) => {
+      const { error } = await supabase.from('items').update({
+        status: 'active',
+        purchased_at: null,
+      }).eq('id', id)
+      if (error) throw error
+    },
+    onError: (error) => showToast(error.message, 'error'),
+  })
+  const { mutateAsync: clearItem, isPending: clearing } = useMutation({
+    mutationFn: async ({ id }) => {
+      const { error } = await supabase.from('items').update({ status: 'cleared' }).eq('id', id)
+      if (error) throw error
+    },
+    onError: (error) => showToast(error.message, 'error'),
+  })
+
+  async function handleToggle() { await setItemActive({ id: item.id }) }
+  async function handleClear() { await clearItem({ id: item.id }) }
+
+  return (
+    <ItemRow
+      item={item}
+      status="purchased"
+      loading={activating || clearing}
+      onClick={handleToggle}
+      actions={[
+        { icon: '✕', label: 'Clear', color: 'bg-gray-400', onAction: handleClear, loading: clearing },
+      ]}
+    />
+  )
+}
+
 export default function ListView() {
   const { id } = useParams()
   const navigate = useNavigate()
   const showToast = useToast()
-  const [list, setList] = useState(null)
-  const [members, setMembers] = useState([])
-  const [items, setItems] = useState([])
-  const [loading, setLoading] = useState(true)
   const [showMembers, setShowMembers] = useState(false)
-  const [editingItem, setEditingItem] = useState(null)
+
+  const { data: lists = [], isLoading: listsLoading } = useQuery({ queryKey: ['lists'] })
+  const { data: items = [], isLoading: itemsLoading } = useQuery({ queryKey: ['items', id] })
+
+  const isLoading = listsLoading || itemsLoading
+
+  const list = lists.find(l => l.id === id) ?? null
+
+  // Silently clear any purchased items left over from previous shopping sessions.
+  // Items purchased before today stay checked off indefinitely otherwise — this
+  // auto-clears them on mount so each session starts with a clean list.
+  // No onError: it's a best-effort background cleanup, not worth surfacing to the user.
+  const { mutate: autoClearStale } = useMutation({
+    mutationFn: async () => {
+      const startOfToday = new Date()
+      startOfToday.setHours(0, 0, 0, 0)
+      await supabase
+        .from('items')
+        .update({ status: 'cleared' })
+        .eq('list_id', id)
+        .eq('status', 'purchased')
+        .lt('purchased_at', startOfToday.toISOString())
+    },
+  })
 
   useEffect(() => {
-    fetchList()
-    fetchItems()
-    fetchMembers()
     autoClearStale()
-
-    const channel = supabase
-      .channel(`list-items-${id}`)
-      .on('postgres_changes',
-        { event: '*', schema: 'public', table: 'items', filter: `list_id=eq.${id}` },
-        () => fetchItems()
-      )
-      .subscribe()
-
-    return () => supabase.removeChannel(channel)
   }, [id])
 
-  async function fetchList() {
-    const { data } = await supabase
-      .from('lists')
-      .select('id, name')
-      .eq('id', id)
-      .single()
+  const { mutate: clearPurchased, isPending: clearingPurchased } = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from('items')
+        .update({ status: 'cleared' })
+        .eq('list_id', id)
+        .eq('status', 'purchased')
+      if (error) throw error
+    },
+    onError: (error) => showToast(error.message, 'error'),
+  })
 
-    setList(data)
-    setLoading(false)
-  }
-
-  async function fetchItems() {
-    const { data } = await supabase
-      .from('items')
-      .select('*')
-      .eq('list_id', id)
-      .in('status', ['active', 'purchased'])
-      .order('added_at', { ascending: false })
-
-    setItems(data ?? [])
-  }
-
-  async function fetchMembers() {
-    const { data } = await supabase
-      .from('list_members')
-      .select('user_id, profiles(name)')
-      .eq('list_id', id)
-    setMembers(data ?? [])
-  }
-
-  async function togglePurchased(item) {
-    const newStatus = item.status === 'active' ? 'purchased' : 'active'
-    const updates = {
-      status: newStatus,
-      purchased_at: newStatus === 'purchased' ? new Date().toISOString() : null
-    }
-    const { error } = await supabase.from('items').update(updates).eq('id', item.id)
-    if (error) showToast(error.message, 'error')
-  }
-
-  async function clearItem(item) {
-    const { error } = await supabase.from('items').update({ status: 'cleared' }).eq('id', item.id)
-    if (error) showToast(error.message, 'error')
-  }
-
-  async function deleteItem(item) {
-    const { error } = await supabase.from('items').delete().eq('id', item.id)
-    if (error) showToast(error.message, 'error')
-  }
-
-  async function autoClearStale() {
-    const startOfToday = new Date()
-    startOfToday.setHours(0, 0, 0, 0)
-    await supabase
-      .from('items')
-      .update({ status: 'cleared' })
-      .eq('list_id', id)
-      .eq('status', 'purchased')
-      .lt('purchased_at', startOfToday.toISOString())
-  }
-
-  async function clearPurchased() {
-    const { error } = await supabase
-      .from('items')
-      .update({ status: 'cleared' })
-      .eq('list_id', id)
-      .eq('status', 'purchased')
-    if (error) showToast(error.message, 'error')
-  }
-
-  if (loading) return null
+  if (isLoading) return <Loading />
 
   if (!list) return (
     <div className="min-h-dvh flex flex-col items-center justify-center px-6 text-center">
@@ -244,6 +271,7 @@ export default function ListView() {
     </div>
   )
 
+  const listMembers = list.list_members ?? []
   const activeItems = items.filter(i => i.status === 'active')
   const purchasedItems = items.filter(i => i.status === 'purchased')
 
@@ -263,9 +291,9 @@ export default function ListView() {
           </button>
           <div className="flex-1 flex flex-col items-center">
             <h1 className="font-bold text-lg truncate">{list.name}</h1>
-            {members.length > 0 && (
+            {listMembers.length > 0 && (
               <button onClick={() => setShowMembers(true)}>
-                <AvatarGroup members={members.map(m => ({ userId: m.user_id, name: m.profiles?.name ?? '?' }))} />
+                <AvatarGroup members={listMembers.map(m => ({ userId: m.user_id, name: m.profiles?.name ?? '?' }))} />
               </button>
             )}
           </div>
@@ -297,16 +325,7 @@ export default function ListView() {
                 <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide px-1 mb-1">{category}</p>
                 <ul className="flex flex-col gap-1">
                   {categoryItems.map(item => (
-                    <ItemRow
-                      key={item.id}
-                      item={item}
-                      status="added"
-                      onClick={() => togglePurchased(item)}
-                      actions={[
-                        { icon: '✏️', label: 'Edit', color: 'bg-blue-400', onAction: () => setEditingItem(item) },
-                        { icon: '🗑️', label: 'Delete', color: 'bg-red-400', onAction: () => deleteItem(item) },
-                      ]}
-                    />
+                    <ActiveItemRow key={item.id} item={item} />
                   ))}
                 </ul>
               </div>
@@ -324,22 +343,15 @@ export default function ListView() {
             </div>
             <ul className="flex flex-col gap-1">
               {purchasedItems.map(item => (
-                <ItemRow
-                  key={item.id}
-                  item={item}
-                  status="purchased"
-                  onClick={() => togglePurchased(item)}
-                  actions={[
-                    { icon: '✕', label: 'Clear', color: 'bg-gray-400', onAction: () => clearItem(item) },
-                  ]}
-                />
+                <PurchasedItemRow key={item.id} item={item} />
               ))}
             </ul>
             <button
-              onClick={clearPurchased}
-              className="mt-3 w-full text-sm text-gray-400 py-2"
+              onClick={() => clearPurchased()}
+              disabled={clearingPurchased}
+              className="mt-3 w-full text-sm text-gray-400 py-2 disabled:opacity-50"
             >
-              Clear purchased
+              {clearingPurchased ? <span className="flex items-center justify-center gap-2"><Spinner className="w-4 h-4" />Clearing…</span> : 'Clear purchased'}
             </button>
           </div>
         )}
@@ -355,13 +367,8 @@ export default function ListView() {
         </button>
       </div>
 
-      {/* Edit bottom sheet */}
-      {editingItem && (
-        <EditItemSheet item={editingItem} onClose={() => setEditingItem(null)} />
-      )}
       {showMembers && (
         <MembersSheet
-          members={members}
           onClose={() => setShowMembers(false)}
           list={list}
         />

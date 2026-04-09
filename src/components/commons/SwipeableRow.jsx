@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import Spinner from './Spinner'
 
 const AUTO_CLOSE_MS = 8000
 const BUTTON_WIDTH = 64 // w-16 = 4rem = 64px
@@ -110,11 +111,15 @@ export default function SwipeableRow({ actions, onClick, children }) {
           <button
             key={i}
             onClick={(e) => { e.stopPropagation(); snapClose(); action.onAction() }}
+            disabled={action.loading}
             style={{ width: BUTTON_WIDTH }}
-            className={`flex flex-col items-center justify-center gap-0.5 shrink-0 text-white text-sm font-medium ${action.color}`}
+            className={`flex flex-col items-center justify-center gap-0.5 shrink-0 text-white text-sm font-medium ${action.color} disabled:opacity-50`}
           >
-            <span className="text-lg leading-none">{action.icon}</span>
-            {action.label && <span className="text-xs">{action.label}</span>}
+            {action.loading
+              ? <Spinner className="w-5 h-5" />
+              : <span className="text-lg leading-none">{action.icon}</span>
+            }
+            {action.label && !action.loading && <span className="text-xs">{action.label}</span>}
           </button>
         ))}
       </div>
