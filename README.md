@@ -7,7 +7,7 @@ A shared grocery list PWA for households. Add items from a pre-populated catalog
 - Magic link auth (passwordless, no passwords to manage)
 - Multiple named lists (Weekly, Costco, etc.)
 - Share lists via a one-time link
-- Browse a catalog of ~130 common items with emoji icons; search by name
+- Browse a catalog of ~200 common items with emoji icons; search by name
 - Add custom items that save to the catalog for future re-use; edit or delete them anytime
 - Items grouped by store category
 - Tap to mark purchased; tap again to undo (in case you mis-tapped); delete items you no longer need
@@ -25,7 +25,7 @@ A shared grocery list PWA for households. Add items from a pre-populated catalog
 | Backend | Supabase (Postgres, Auth, Realtime, RLS) |
 | Hosting | Vercel |
 
-No backend server — the frontend talks directly to Supabase. The anon key is public and safe; RLS enforces all access control.
+No backend server — the frontend talks directly to Supabase. The anon key is public and safe; [RLS](https://supabase.com/docs/guides/database/postgres/row-level-security) enforces all access control.
 
 ## Local Setup
 
@@ -81,4 +81,4 @@ For full deployment steps including Realtime setup, Gmail SMTP, and Supabase URL
 
 ---
 
-For full design detail — user flows, schema, RLS policies, code patterns — see [`blueprint.md`](blueprint.md).
+For full product detail — user flows, feature scope, data model, and categories — see [`SPEC.md`](SPEC.md).
