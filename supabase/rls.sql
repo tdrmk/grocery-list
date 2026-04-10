@@ -105,6 +105,16 @@ create policy "Users can join via claimed share link"
     and list_id in (select list_id from share_links where claimed_by = (select auth.uid()))
   );
 
+create policy "Users can leave lists"
+  on list_members for delete
+  to authenticated
+  using (
+    user_id = (select auth.uid())
+    and list_id not in (
+      select id from lists where created_by = (select auth.uid())
+    )
+  );
+
 -- ============================================================
 -- Catalog
 -- ============================================================

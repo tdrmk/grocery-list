@@ -88,7 +88,7 @@ Active:
 
 - Magic link auth, 180-day sessions
 - Display name on first login
-- Multiple lists — create, name, delete
+- Swipe to delete list (creators) or leave list (members)
 - Share list via single-use link (24h expiry)
 - Real-time sync across devices (Supabase subscriptions)
 - Pre-populated catalog (~100–150 items with emoji icons, grouped by category)
@@ -108,7 +108,7 @@ Active:
 
 ### Not Yet Built
 
-- Leaving a shared list
+- Leaving a shared list ✓
 - Dark mode
 - Frequently suggested items
 - Read-only offline mode (list data is not cached — app shell loads but lists require network)

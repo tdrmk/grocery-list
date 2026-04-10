@@ -55,6 +55,37 @@ function ConfirmDelete({ list, onClose, onDeleted }) {
   )
 }
 
+function ConfirmLeave({ list, onClose }) {
+  const userId = useUserId()
+  const showToast = useToast()
+  const { mutateAsync: leaveList, isPending } = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.from('list_members')
+        .delete()
+        .eq('list_id', list.id)
+        .eq('user_id', userId)
+      if (error) throw error
+    },
+    onError: (error) => showToast(error.message, 'error'),
+    onSuccess: () => { showToast(`You left "${list.name}"`); onClose() },
+  })
+
+  return (
+    <BottomSheet open onClose={onClose}>
+      <p className="text-base font-semibold">Leave "{list.name}"?</p>
+      <p className="text-sm text-gray-400 -mt-2">You'll need a new invite link to rejoin.</p>
+      <div className="flex gap-2">
+        <button onClick={() => leaveList()} disabled={isPending} className="flex-1 bg-orange-500 text-white font-semibold rounded-xl py-3 disabled:opacity-50">
+          {isPending
+            ? <span className="flex items-center justify-center gap-2"><Spinner className="w-4 h-4" />Leaving…</span>
+            : 'Leave'}
+        </button>
+        <button onClick={onClose} className="flex-1 bg-gray-100 text-gray-600 font-semibold rounded-xl py-3">Cancel</button>
+      </div>
+    </BottomSheet>
+  )
+}
+
 function CreateList({ onClose }) {
   const userId = useUserId()
   const navigate = useNavigate()
@@ -115,6 +146,7 @@ function ListCard({ list }) {
   const navigate = useNavigate()
   const isCreator = list.created_by === userId
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const [confirmLeave, setConfirmLeave] = useState(false)
   const { data: items = [], isPending: isLoading } = useItemsQuery(list.id)
   const icons = items.filter(i => i.status === 'active').map(i => i.icon)
 
@@ -136,24 +168,24 @@ function ListCard({ list }) {
     </div>
   )
 
+  const actions = isCreator
+    ? [{ icon: '🗑️', label: 'Delete', color: 'bg-red-500', onAction: () => setConfirmDelete(true) }]
+    : [{ icon: '🚪', label: 'Leave', color: 'bg-orange-400', onAction: () => setConfirmLeave(true) }]
+
   return (
     <li className="rounded-xl overflow-hidden shadow-sm">
-      {isCreator ? (
-        <SwipeableRow
-          actions={[{ icon: '🗑️', label: 'Delete', color: 'bg-red-500', onAction: () => setConfirmDelete(true) }]}
-          onClick={() => navigate(`/list/${list.id}`)}
-        >
-          {content}
-        </SwipeableRow>
-      ) : (
-        <div onClick={() => navigate(`/list/${list.id}`)}>{content}</div>
-      )}
+      <SwipeableRow actions={actions} onClick={() => navigate(`/list/${list.id}`)}>
+        {content}
+      </SwipeableRow>
       {confirmDelete && (
         <ConfirmDelete
           list={list}
           onClose={() => setConfirmDelete(false)}
           onDeleted={() => setConfirmDelete(false)}
         />
+      )}
+      {confirmLeave && (
+        <ConfirmLeave list={list} onClose={() => setConfirmLeave(false)} />
       )}
     </li>
   )
