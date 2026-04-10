@@ -17,10 +17,7 @@ export default function ItemRow({ item, status, disabled, loading, trailing, onC
 
   const isDisabled = disabled || loading
   const hasActions = actions?.length > 0
-
-  function handleClick() {
-    if (!isDisabled) onClick?.()
-  }
+  const clickHandler = isDisabled ? undefined : onClick
 
   let trailingNode = null
   if (loading) {
@@ -32,7 +29,7 @@ export default function ItemRow({ item, status, disabled, loading, trailing, onC
   }
 
   const content = (
-    <div className={`flex items-center gap-3 ${hasActions ? 'pl-4 pr-8' : 'px-4'} py-3 ${bg} ${isDisabled ? 'cursor-default' : `cursor-pointer ${activeBg}`} select-none transition-colors`}>
+    <div className={`flex items-center gap-3 ${hasActions ? 'pl-4 pr-8' : 'px-4'} py-3 ${bg} ${isDisabled ? 'cursor-default' : `cursor-pointer ${activeBg}`} ${disabled ? 'opacity-50' : ''} select-none transition-colors`}>
       <span className="text-xl">{item.icon}</span>
       <span className="flex-1 text-base">{item.name}</span>
       {item.quantity && <span className="text-sm text-gray-400">{item.quantity}</span>}
@@ -49,8 +46,8 @@ export default function ItemRow({ item, status, disabled, loading, trailing, onC
   return (
     <li className="rounded-xl overflow-hidden shadow-sm">
       {hasActions
-        ? <SwipeableRow actions={actions} onClick={handleClick}>{content}</SwipeableRow>
-        : <div onClick={handleClick}>{content}</div>
+        ? <SwipeableRow actions={actions} onClick={clickHandler}>{content}</SwipeableRow>
+        : <div onClick={clickHandler}>{content}</div>
       }
     </li>
   )
