@@ -30,8 +30,8 @@ create index if not exists idx_list_members_list_id on list_members(list_id);
 -- items.list_id is the filter in the items policy subquery
 create index if not exists idx_items_list_id on items(list_id);
 
--- catalog.created_by is the filter for custom catalog visibility
-create index if not exists idx_catalog_created_by on catalog(created_by);
+-- catalog.list_id is the filter for custom catalog visibility
+create index if not exists idx_catalog_list_id on catalog(list_id);
 
 -- share_links.token is the unique claim lookup; list_id is used in INSERT policy
 create index if not exists idx_share_links_token   on share_links(token);
@@ -114,26 +114,26 @@ create policy "Global catalog readable by authenticated users"
   to authenticated
   using (is_global = true);
 
-create policy "Custom catalog readable by creator"
+create policy "Custom catalog readable by list members"
   on catalog for select
   to authenticated
-  using (not is_global and created_by = (select auth.uid()));
+  using (not is_global and list_id in (select private.get_my_list_ids()));
 
 create policy "Users can add custom catalog items"
   on catalog for insert
   to authenticated
-  with check (is_global = false and created_by = (select auth.uid()));
+  with check (is_global = false and list_id in (select private.get_my_list_ids()));
 
-create policy "Users can update their custom catalog items"
+create policy "List members can update custom catalog items"
   on catalog for update
   to authenticated
-  using (not is_global and created_by = (select auth.uid()))
-  with check (not is_global and created_by = (select auth.uid()));
+  using (not is_global and list_id in (select private.get_my_list_ids()))
+  with check (not is_global and list_id in (select private.get_my_list_ids()));
 
-create policy "Users can delete their custom catalog items"
+create policy "List members can delete custom catalog items"
   on catalog for delete
   to authenticated
-  using (not is_global and created_by = (select auth.uid()));
+  using (not is_global and list_id in (select private.get_my_list_ids()));
 
 -- ============================================================
 -- Items

@@ -24,14 +24,14 @@ create table list_members (
   primary key (list_id, user_id)
 );
 
--- Catalog: global pre-populated items + user-added custom items
+-- Catalog: global pre-populated items + list-level custom items
 create table catalog (
   id         uuid primary key default gen_random_uuid(),
   name       text not null,
   category   text not null,
   icon       text not null,
   is_global  boolean not null default false,
-  created_by uuid references profiles (id) on delete set null default auth.uid(),
+  list_id    uuid references lists (id) on delete cascade,
   created_at timestamptz not null default now()
 );
 

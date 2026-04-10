@@ -99,7 +99,7 @@ function CustomItemForm({ name, setName, category, setCategory, icon, setIcon })
 function DeleteConfirmSheet({ onClose, onConfirm }) {
   return (
     <BottomSheet open onClose={onClose}>
-      <p className="text-base font-semibold">Delete this item from your catalog?</p>
+      <p className="text-base font-semibold">Delete this item from this list?</p>
       <div className="flex gap-2">
         <button
           onClick={onConfirm}
@@ -134,7 +134,7 @@ export function AddCustomItem() {
     mutationFn: async ({ name, category, icon }) => {
       const { data: catalogRow, error } = await supabase
         .from('catalog')
-        .insert({ name, category, icon })
+        .insert({ name, category, icon, list_id: listId })
         .select()
         .single()
       if (error || !catalogRow) throw error ?? new Error('Could not create item')

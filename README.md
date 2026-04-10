@@ -8,7 +8,7 @@ A shared grocery list PWA for households. Add items from a pre-populated catalog
 - Multiple named lists (Weekly, Costco, etc.)
 - Share lists via a one-time link
 - Browse a catalog of ~200 common items with emoji icons; search by name
-- Add custom items that save to the catalog for future re-use; edit or delete them anytime
+- Add custom items shared with all list members; saved to the list's catalog for quick re-add next time; edit or delete anytime
 - Items grouped by store category
 - Tap to mark purchased; tap again to undo (in case you mis-tapped); delete items you no longer need
 - Add quantity and notes to any item (e.g. "2x", "500g", "organic")

@@ -95,10 +95,10 @@ export default function AddItem() {
     staleTime: Infinity,
   })
 
-  const { data: ownCatalog = [] } = useQuery({
-    queryKey: ['catalog-own'],
+  const { data: listCatalog = [] } = useQuery({
+    queryKey: ['catalog-list', listId],
     queryFn: async () => {
-      const { data, error } = await supabase.from('catalog').select('*').eq('is_global', false).order('category')
+      const { data, error } = await supabase.from('catalog').select('*').eq('is_global', false).eq('list_id', listId).order('category')
       if (error) throw error
       return data ?? []
     },
@@ -136,7 +136,7 @@ export default function AddItem() {
 
   const q = search.trim().toLowerCase()
   const filteredGlobal = q ? globalCatalog.filter(i => i.name.toLowerCase().includes(q)) : globalCatalog
-  const filteredOwn = q ? ownCatalog.filter(i => i.name.toLowerCase().includes(q)) : ownCatalog
+  const filteredList = q ? listCatalog.filter(i => i.name.toLowerCase().includes(q)) : listCatalog
 
   const grouped = filteredGlobal.reduce((acc, item) => {
     if (!acc[item.category]) acc[item.category] = []
@@ -200,22 +200,22 @@ export default function AddItem() {
         </CategorySection>
       ))}
 
-      {/* My items */}
-      {filteredOwn.length > 0 && (
-        <CategorySection title="My items">
-          {filteredOwn.map(ownItem => (
+      {/* Custom items */}
+      {filteredList.length > 0 && (
+        <CategorySection title="Custom items">
+          {filteredList.map(item => (
             <CatalogItemRow
-              key={ownItem.id}
-              catalogItem={ownItem}
-              cartItem={cartByCatalogId.get(ownItem.id)}
+              key={item.id}
+              catalogItem={item}
+              cartItem={cartByCatalogId.get(item.id)}
               listId={listId}
-              onEdit={() => navigate(`/list/${listId}/add/custom/edit`, { state: { existingItem: ownItem } })}
+              onEdit={() => navigate(`/list/${listId}/add/custom/edit`, { state: { existingItem: item } })}
             />
           ))}
         </CategorySection>
       )}
 
-      {filteredGlobal.length === 0 && filteredOwn.length === 0 && search.trim() && (
+      {filteredGlobal.length === 0 && filteredList.length === 0 && search.trim() && (
         <div className="px-4 pt-4">
           <button
             onClick={() => navigate(`/list/${listId}/add/custom`, { state: { defaultName: search.trim() } })}

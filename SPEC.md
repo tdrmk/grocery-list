@@ -42,7 +42,7 @@ Open "Weekly Groceries" → tap "+ Add items"
         → Search "Amul Butter" → nothing found
         → Tap "Add 'Amul Butter' as custom item" (or tap + in header at any point)
         → Pick an icon and category → save
-        → Added to the list AND saved to your personal catalog for next time
+        → Added to the list AND saved to the list's catalog for next time
 
 Wife's phone updates live — she sees the items appear
 ```
@@ -92,7 +92,7 @@ Active:
 - Share list via single-use link (24h expiry)
 - Real-time sync across devices (Supabase subscriptions)
 - Pre-populated catalog (~100–150 items with emoji icons, grouped by category)
-- Custom items — add name, category, icon; saved to personal catalog
+- Custom items — add name, category, icon; saved to the list's catalog, visible to all list members
 - Edit and delete custom catalog items
 - Add items from catalog to list
 - Items grouped by category on the list
@@ -129,7 +129,7 @@ Many-to-many join between lists and profiles. A user sees and can edit a list on
 ### catalog
 The item catalog. Two kinds:
 - **Global items** (`is_global = true`) — pre-seeded, visible to everyone, not editable by users
-- **Custom items** (`is_global = false`) — created by a user, visible and editable only by that user
+- **Custom items** (`is_global = false`) — created by a list member, visible and editable by all members of that list. Linked to the list via `list_id`.
 
 Columns: name, category, icon (emoji string).
 
