@@ -13,6 +13,7 @@ import SettingsDrawer from './SettingsDrawer'
 import Spinner from './commons/Spinner'
 import Loading from './commons/Loading'
 import { useListsQuery, useItemsQuery } from '../hooks/queries'
+import SwipeableRow from './commons/SwipeableRow'
 
 function SettingsIcon() {
   return (
@@ -116,9 +117,10 @@ function ListCard({ list }) {
   const [confirmDelete, setConfirmDelete] = useState(false)
   const { data: items = [], isPending: isLoading } = useItemsQuery(list.id)
   const icons = items.filter(i => i.status === 'active').map(i => i.icon)
-  return (
-    <li className="flex items-center justify-between bg-white rounded-xl px-4 py-3 shadow-sm">
-      <div className="flex-1 cursor-pointer" onClick={() => navigate(`/list/${list.id}`)}>
+
+  const content = (
+    <div className="flex items-center bg-white px-4 py-3 cursor-pointer active:bg-gray-50 select-none">
+      <div className="flex-1">
         <p className="text-lg font-medium">{list.name}</p>
         <AvatarGroup members={(list.list_members ?? []).map(m => ({
           userId: m.user_id,
@@ -131,8 +133,20 @@ function ListCard({ list }) {
             : <p className="text-xs text-gray-400 mt-2 ml-1">No items</p>
         }
       </div>
-      {isCreator && (
-        <button onClick={() => setConfirmDelete(true)} className="text-sm text-red-400 ml-4">Delete</button>
+    </div>
+  )
+
+  return (
+    <li className="rounded-xl overflow-hidden shadow-sm">
+      {isCreator ? (
+        <SwipeableRow
+          actions={[{ icon: '🗑️', label: 'Delete', color: 'bg-red-500', onAction: () => setConfirmDelete(true) }]}
+          onClick={() => navigate(`/list/${list.id}`)}
+        >
+          {content}
+        </SwipeableRow>
+      ) : (
+        <div onClick={() => navigate(`/list/${list.id}`)}>{content}</div>
       )}
       {confirmDelete && (
         <ConfirmDelete
