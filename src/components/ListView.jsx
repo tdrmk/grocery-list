@@ -289,10 +289,10 @@ export default function ListView() {
           <button onClick={() => navigate('/')} className="text-primary text-xl rounded-full w-9 h-9 flex items-center justify-center">
             ←
           </button>
-          <div className="flex-1 flex flex-col items-center">
-            <h1 className="font-bold text-lg truncate">{list.name}</h1>
+          <div className="flex-1 flex items-center justify-start gap-2 min-w-0">
+            <h1 className="font-bold text-lg truncate min-w-0">{list.name}</h1>
             {listMembers.length > 0 && (
-              <button onClick={() => setShowMembers(true)}>
+              <button onClick={() => setShowMembers(true)} className="shrink-0">
                 <AvatarGroup members={listMembers.map(m => ({ userId: m.user_id, name: m.profiles?.name ?? '?' }))} />
               </button>
             )}
