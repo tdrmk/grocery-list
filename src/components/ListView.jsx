@@ -251,6 +251,10 @@ export default function ListView() {
 
   const isLoading = listsLoading || itemsLoading
 
+  const [groupByCategory] = useState(
+    () => localStorage.getItem('groupByCategory') !== 'false'
+  )
+
   const list = lists.find(l => l.id === id) ?? null
 
   // Silently clear any purchased items left over from previous shopping sessions.
@@ -341,19 +345,26 @@ export default function ListView() {
           <p className="text-center text-gray-400 py-4">All items purchased!</p>
         )}
 
-        {/* Active items grouped by category */}
+        {/* Active items — grouped by category or flat */}
         {activeItems.length > 0 && (
           <div className="flex flex-col gap-4">
-            {Object.entries(groupedActive).map(([category, categoryItems]) => (
-              <div key={category}>
-                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide px-1 mb-1">{category}</p>
-                <ul className="flex flex-col gap-1">
-                  {categoryItems.map(item => (
+            {groupByCategory
+              ? Object.entries(groupedActive).map(([category, categoryItems]) => (
+                  <div key={category}>
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide px-1 mb-1">{category}</p>
+                    <ul className="flex flex-col gap-1">
+                      {categoryItems.map(item => (
+                        <ActiveItemRow key={item.id} item={item} />
+                      ))}
+                    </ul>
+                  </div>
+                ))
+              : <ul className="flex flex-col gap-1">
+                  {activeItems.map(item => (
                     <ActiveItemRow key={item.id} item={item} />
                   ))}
                 </ul>
-              </div>
-            ))}
+            }
           </div>
         )}
 
