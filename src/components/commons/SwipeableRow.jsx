@@ -14,8 +14,12 @@ export default function SwipeableRow({ actions, onClick, children }) {
   const isDragging = useRef(false)
   const isOpen = useRef(false)
   const timeoutRef = useRef(null)
+  const dragIdleRef = useRef(null)
 
-  useEffect(() => () => clearTimeout(timeoutRef.current), [])
+  useEffect(() => () => {
+    clearTimeout(timeoutRef.current)
+    clearTimeout(dragIdleRef.current)
+  }, [])
 
   const maxWidth = actions.length * BUTTON_WIDTH
 
@@ -63,9 +67,17 @@ export default function SwipeableRow({ actions, onClick, children }) {
     const base = isOpen.current ? maxWidth : 0
     const next = Math.min(maxWidth, Math.max(0, base - deltaX))
     reveal(next)
+
+    clearTimeout(dragIdleRef.current)
+    dragIdleRef.current = setTimeout(() => {
+      if (!isDragging.current) return
+      isDragging.current = false
+      revealRef.current > maxWidth * 0.5 ? snapOpen() : snapClose()
+    }, 500)
   }
 
   function onPointerUp() {
+    clearTimeout(dragIdleRef.current)
     if (!isDragging.current) return
     isDragging.current = false
 
@@ -73,6 +85,7 @@ export default function SwipeableRow({ actions, onClick, children }) {
   }
 
   function onPointerCancel() {
+    clearTimeout(dragIdleRef.current)
     isDragging.current = false
     snapClose()
   }
