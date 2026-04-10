@@ -1,8 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { supabase } from '../supabaseClient'
 import { useToast } from './commons/Toast'
 import ItemRow from './commons/ItemRow'
+import Loading from './commons/Loading'
 
 function CategorySection({ title, children }) {
   const [collapsed, setCollapsed] = useState(false)
@@ -24,68 +26,116 @@ function CategorySection({ title, children }) {
   )
 }
 
+function CatalogItemRow({ catalogItem, cartItem, listId, onEdit }) {
+  const showToast = useToast()
+
+  const { mutate: addItem, isPending: adding } = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.from('items').insert({
+        list_id: listId,
+        catalog_id: catalogItem.id,
+        name: catalogItem.name,
+        category: catalogItem.category,
+        icon: catalogItem.icon,
+        status: 'active',
+      })
+      if (error) throw error
+    },
+    onError: (err) => showToast(err.message, 'error'),
+  })
+
+  const { mutate: removeItem, isPending: removing } = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from('items')
+        .delete()
+        .eq('id', cartItem.id)
+        .eq('list_id', listId)
+        .eq('status', 'active')
+      if (error) throw error
+    },
+    onError: (err) => showToast(err.message, 'error'),
+  })
+
+  const status = cartItem?.status === 'active' ? 'added'
+    : cartItem?.status === 'purchased' ? 'purchased'
+    : undefined
+
+  function handleClick() {
+    if (cartItem?.status === 'active') removeItem()
+    else if (!cartItem) addItem()
+  }
+
+  return (
+    <ItemRow
+      item={catalogItem}
+      status={status}
+      disabled={cartItem?.status === 'purchased'}
+      loading={adding || removing}
+      trailing="badge"
+      onClick={handleClick}
+      actions={onEdit ? [{ icon: '✏️', label: 'Edit', color: 'bg-blue-500', onAction: onEdit }] : undefined}
+    />
+  )
+}
+
 export default function AddItem() {
   const { id: listId } = useParams()
   const navigate = useNavigate()
-  const showToast = useToast()
-  const [catalog, setCatalog] = useState([])
-  const [recentItems, setRecentItems] = useState([])
-  const [addedIds, setAddedIds] = useState(new Set())
-  const [purchasedIds, setPurchasedIds] = useState(new Set())
   const [search, setSearch] = useState('')
-  const [adding, setAdding] = useState(null)
 
-  useEffect(() => {
-    supabase
-      .from('catalog')
-      .select('*')
-      .order('category')
-      .then(({ data }) => setCatalog(data ?? []))
+  const { data: globalCatalog = [], isLoading: globalLoading } = useQuery({
+    queryKey: ['catalog-global'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('catalog').select('*').eq('is_global', true).order('category')
+      if (error) throw error
+      return data ?? []
+    },
+    staleTime: Infinity,
+  })
 
-    supabase
-      .from('items')
-      .select('catalog_id, status, name, icon, category')
-      .eq('list_id', listId)
-      .then(({ data }) => {
-        const items = data ?? []
-        setAddedIds(new Set(items.filter(i => i.status === 'active').map(i => i.catalog_id).filter(Boolean)))
-        setPurchasedIds(new Set(items.filter(i => i.status === 'purchased').map(i => i.catalog_id).filter(Boolean)))
+  const { data: ownCatalog = [] } = useQuery({
+    queryKey: ['catalog-own'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('catalog').select('*').eq('is_global', false).order('category')
+      if (error) throw error
+      return data ?? []
+    },
+  })
 
-        const counts = {}
-        for (const item of items.filter(i => i.status === 'cleared' || i.status === 'purchased')) {
-          const key = item.catalog_id ?? item.name
-          if (!counts[key]) counts[key] = { ...item, count: 0 }
-          counts[key].count++
-        }
-        setRecentItems(Object.values(counts).sort((a, b) => b.count - a.count))
-      })
-  }, [])
+  // Active + purchased — populated by useSync in App.jsx, no separate fetch
+  const { data: cartItems = [] } = useQuery({ queryKey: ['items', listId] })
+  const cartByCatalogId = new Map(
+    cartItems.filter(i => i.catalog_id).map(i => [i.catalog_id, i])
+  )
 
-  async function addItem(catalogItem) {
-    setAdding(catalogItem.id)
-
-    const { error } = await supabase.from('items').insert({
-      list_id: listId,
-      catalog_id: catalogItem.id,
-      name: catalogItem.name,
-      category: catalogItem.category,
-      icon: catalogItem.icon,
-      status: 'active',
-    })
-
-    if (error) { showToast(error.message, 'error'); setAdding(null); return }
-    setAddedIds(prev => new Set([...prev, catalogItem.id]))
-    setAdding(null)
+  // Cleared items only — for "Recently purchased" section
+  const { data: recentRaw = [] } = useQuery({
+    queryKey: ['items-recent', listId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('items')
+        .select('catalog_id, name, icon, category')
+        .eq('list_id', listId)
+        .eq('status', 'cleared')
+        .not('catalog_id', 'is', null) // items without a catalog_id can't be managed from this screen
+      if (error) throw error
+      return data ?? []
+    },
+  })
+  const counts = {}
+  for (const item of recentRaw) {
+    const key = item.catalog_id
+    if (!counts[key]) counts[key] = { ...item, count: 1 }
+    else counts[key].count++
   }
+  const recentItems = Object.values(counts).sort((a, b) => b.count - a.count)
 
-  const filtered = search.trim()
-    ? catalog.filter(item =>
-        item.name.toLowerCase().includes(search.toLowerCase())
-      )
-    : catalog
+  if (globalLoading) return <Loading />
 
-  const filteredGlobal = filtered.filter(item => item.is_global)
-  const filteredOwn = filtered.filter(item => !item.is_global)
+  const q = search.trim().toLowerCase()
+  const filteredGlobal = q ? globalCatalog.filter(i => i.name.toLowerCase().includes(q)) : globalCatalog
+  const filteredOwn = q ? ownCatalog.filter(i => i.name.toLowerCase().includes(q)) : ownCatalog
 
   const grouped = filteredGlobal.reduce((acc, item) => {
     if (!acc[item.category]) acc[item.category] = []
@@ -124,70 +174,47 @@ export default function AddItem() {
       {/* Recently purchased */}
       {!search.trim() && recentItems.length > 0 && (
         <CategorySection title="Recently purchased">
-          {recentItems.map(item => {
-            const isAdded = item.catalog_id ? addedIds.has(item.catalog_id) : false
-            const isPurchased = item.catalog_id ? purchasedIds.has(item.catalog_id) : false
-            return (
-              <ItemRow
-                key={item.catalog_id ?? item.name}
-                item={item}
-                status={isAdded ? 'added' : isPurchased ? 'purchased' : undefined}
-                disabled={isAdded || isPurchased}
-                loading={adding === item.catalog_id}
-                trailing="badge"
-                onClick={() => addItem({ id: item.catalog_id, ...item })}
-              />
-            )
-          })}
+          {recentItems.map(recentItem => (
+            <CatalogItemRow
+              key={recentItem.catalog_id}
+              catalogItem={{ id: recentItem.catalog_id, name: recentItem.name, icon: recentItem.icon, category: recentItem.category }}
+              cartItem={cartByCatalogId.get(recentItem.catalog_id)}
+              listId={listId}
+            />
+          ))}
         </CategorySection>
       )}
 
-      {/* Catalog */}
-      {Object.entries(grouped).map(([category, items]) => (
+      {/* Global catalog grouped by category */}
+      {Object.entries(grouped).map(([category, catalogItems]) => (
         <CategorySection key={category} title={category}>
-          {items.map(item => {
-            const isAdded = addedIds.has(item.id)
-            const isPurchased = purchasedIds.has(item.id)
-            return (
-              <ItemRow
-                key={item.id}
-                item={item}
-                status={isAdded ? 'added' : isPurchased ? 'purchased' : undefined}
-                disabled={isAdded || isPurchased}
-                loading={adding === item.id}
-                trailing="badge"
-                onClick={() => addItem(item)}
-              />
-            )
-          })}
+          {catalogItems.map(catalogItem => (
+            <CatalogItemRow
+              key={catalogItem.id}
+              catalogItem={catalogItem}
+              cartItem={cartByCatalogId.get(catalogItem.id)}
+              listId={listId}
+            />
+          ))}
         </CategorySection>
       ))}
 
       {/* My items */}
       {filteredOwn.length > 0 && (
         <CategorySection title="My items">
-          {filteredOwn.map(item => {
-            const isAdded = addedIds.has(item.id)
-            const isPurchased = purchasedIds.has(item.id)
-            return (
-              <ItemRow
-                key={item.id}
-                item={item}
-                status={isAdded ? 'added' : isPurchased ? 'purchased' : undefined}
-                disabled={isAdded || isPurchased}
-                loading={adding === item.id}
-                trailing="badge"
-                onClick={() => addItem(item)}
-                actions={[
-                  { icon: '✏️', label: 'Edit', color: 'bg-blue-500', onAction: () => navigate(`/list/${listId}/add/custom/edit`, { state: { existingItem: item } }) },
-                ]}
-              />
-            )
-          })}
+          {filteredOwn.map(ownItem => (
+            <CatalogItemRow
+              key={ownItem.id}
+              catalogItem={ownItem}
+              cartItem={cartByCatalogId.get(ownItem.id)}
+              listId={listId}
+              onEdit={() => navigate(`/list/${listId}/add/custom/edit`, { state: { existingItem: ownItem } })}
+            />
+          ))}
         </CategorySection>
       )}
 
-      {filtered.length === 0 && search.trim() && (
+      {filteredGlobal.length === 0 && filteredOwn.length === 0 && search.trim() && (
         <div className="px-4 pt-4">
           <button
             onClick={() => navigate(`/list/${listId}/add/custom`, { state: { defaultName: search.trim() } })}
