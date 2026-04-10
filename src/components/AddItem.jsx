@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../supabaseClient'
 import { useToast } from './commons/Toast'
 import ItemRow from './commons/ItemRow'
@@ -29,18 +29,23 @@ function CategorySection({ title, children }) {
 
 function CatalogItemRow({ catalogItem, cartItem, listId, onEdit }) {
   const showToast = useToast()
+  const queryClient = useQueryClient()
 
   const { mutate: addItem, isPending: adding } = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from('items').insert({
+      const { data, error } = await supabase.from('items').insert({
         list_id: listId,
         catalog_id: catalogItem.id,
         name: catalogItem.name,
         category: catalogItem.category,
         icon: catalogItem.icon,
         status: 'active',
-      })
+      }).select().single()
       if (error) throw error
+      return data
+    },
+    onSuccess: (newItem) => {
+      queryClient.setQueryData(['items', listId], old => [newItem, ...(old ?? [])])
     },
     onError: (err) => showToast(err.message, 'error'),
   })
@@ -54,6 +59,11 @@ function CatalogItemRow({ catalogItem, cartItem, listId, onEdit }) {
         .eq('list_id', listId)
         .eq('status', 'active')
       if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.setQueryData(['items', listId], old =>
+        (old ?? []).filter(i => i.id !== cartItem.id)
+      )
     },
     onError: (err) => showToast(err.message, 'error'),
   })

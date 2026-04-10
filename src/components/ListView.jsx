@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../supabaseClient'
 import { useUserId } from '../UserContext'
 import { AvatarGroup } from './commons/Avatar'
@@ -141,14 +141,21 @@ function EditItemSheet({ item, onClose }) {
 
 function ActiveItemRow({ item }) {
   const showToast = useToast()
+  const queryClient = useQueryClient()
   const [editing, setEditing] = useState(false)
   const { mutateAsync: setItemPurchased, isPending: purchasing } = useMutation({
     mutationFn: async ({ id }) => {
-      const { error } = await supabase.from('items').update({
+      const { data, error } = await supabase.from('items').update({
         status: 'purchased',
         purchased_at: new Date().toISOString(),
-      }).eq('id', id)
+      }).eq('id', id).select().single()
       if (error) throw error
+      return data
+    },
+    onSuccess: (updatedItem) => {
+      queryClient.setQueryData(['items', item.list_id], old =>
+        (old ?? []).map(i => i.id === updatedItem.id ? updatedItem : i)
+      )
     },
     onError: (error) => showToast(error.message, 'error'),
   })
@@ -156,6 +163,11 @@ function ActiveItemRow({ item }) {
     mutationFn: async ({ id }) => {
       const { error } = await supabase.from('items').delete().eq('id', id)
       if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.setQueryData(['items', item.list_id], old =>
+        (old ?? []).filter(i => i.id !== item.id)
+      )
     },
     onError: (error) => showToast(error.message, 'error'),
   })
@@ -182,13 +194,20 @@ function ActiveItemRow({ item }) {
 
 function PurchasedItemRow({ item }) {
   const showToast = useToast()
+  const queryClient = useQueryClient()
   const { mutateAsync: setItemActive, isPending: activating } = useMutation({
     mutationFn: async ({ id }) => {
-      const { error } = await supabase.from('items').update({
+      const { data, error } = await supabase.from('items').update({
         status: 'active',
         purchased_at: null,
-      }).eq('id', id)
+      }).eq('id', id).select().single()
       if (error) throw error
+      return data
+    },
+    onSuccess: (updatedItem) => {
+      queryClient.setQueryData(['items', item.list_id], old =>
+        (old ?? []).map(i => i.id === updatedItem.id ? updatedItem : i)
+      )
     },
     onError: (error) => showToast(error.message, 'error'),
   })
@@ -196,6 +215,11 @@ function PurchasedItemRow({ item }) {
     mutationFn: async ({ id }) => {
       const { error } = await supabase.from('items').update({ status: 'cleared' }).eq('id', id)
       if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.setQueryData(['items', item.list_id], old =>
+        (old ?? []).filter(i => i.id !== item.id)
+      )
     },
     onError: (error) => showToast(error.message, 'error'),
   })
