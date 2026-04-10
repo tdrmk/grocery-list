@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { useMutation } from '@tanstack/react-query'
 import { supabase } from '../supabaseClient'
 import { useUserId } from '../UserContext'
 import { AvatarGroup } from './commons/Avatar'
@@ -10,6 +10,7 @@ import { useToast } from './commons/Toast'
 import ItemRow from './commons/ItemRow'
 import Spinner from './commons/Spinner'
 import Loading from './commons/Loading'
+import { useListsQuery, useItemsQuery, useProfileQuery } from '../hooks/queries'
 
 function ShareIcon() {
   return (
@@ -20,9 +21,8 @@ function ShareIcon() {
 }
 
 function ShareButton({ listId, listName }) {
-  const userId = useUserId()
   const showToast = useToast()
-  const { data: profile } = useQuery({ queryKey: ['profile', userId] })
+  const { data: profile } = useProfileQuery()
   const { mutateAsync, isPending } = useMutation({
     mutationFn: async () => {
       const { data, error } = await supabase
@@ -222,8 +222,8 @@ export default function ListView() {
   const showToast = useToast()
   const [showMembers, setShowMembers] = useState(false)
 
-  const { data: lists = [], isLoading: listsLoading } = useQuery({ queryKey: ['lists'] })
-  const { data: items = [], isLoading: itemsLoading } = useQuery({ queryKey: ['items', id] })
+  const { data: lists = [], isPending: listsLoading } = useListsQuery()
+  const { data: items = [], isPending: itemsLoading } = useItemsQuery(id)
 
   const isLoading = listsLoading || itemsLoading
 

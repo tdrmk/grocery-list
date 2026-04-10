@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useQuery, useMutation } from '@tanstack/react-query'
+import { useMutation } from '@tanstack/react-query'
 import { supabase } from '../supabaseClient'
 import { useUserId } from '../UserContext'
 import groceryBag from '../assets/grocery-bag.svg'
@@ -12,6 +12,7 @@ import { useToast } from './commons/Toast'
 import SettingsDrawer from './SettingsDrawer'
 import Spinner from './commons/Spinner'
 import Loading from './commons/Loading'
+import { useListsQuery, useItemsQuery } from '../hooks/queries'
 
 function SettingsIcon() {
   return (
@@ -113,7 +114,7 @@ function ListCard({ list }) {
   const navigate = useNavigate()
   const isCreator = list.created_by === userId
   const [confirmDelete, setConfirmDelete] = useState(false)
-  const { data: items = [], isLoading } = useQuery({ queryKey: ['items', list.id] })
+  const { data: items = [], isPending: isLoading } = useItemsQuery(list.id)
   const icons = items.filter(i => i.status === 'active').map(i => i.icon)
   return (
     <li className="flex items-center justify-between bg-white rounded-xl px-4 py-3 shadow-sm">
@@ -145,7 +146,7 @@ function ListCard({ list }) {
 }
 
 export default function ListsView() {
-  const { data: lists = [], isLoading } = useQuery({ queryKey: ['lists'] })
+  const { data: lists = [], isPending: isLoading } = useListsQuery()
   const [creating, setCreating] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
 

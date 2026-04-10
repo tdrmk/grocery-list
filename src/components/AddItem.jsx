@@ -5,6 +5,7 @@ import { supabase } from '../supabaseClient'
 import { useToast } from './commons/Toast'
 import ItemRow from './commons/ItemRow'
 import Loading from './commons/Loading'
+import { useItemsQuery } from '../hooks/queries'
 
 function CategorySection({ title, children }) {
   const [collapsed, setCollapsed] = useState(false)
@@ -104,7 +105,7 @@ export default function AddItem() {
   })
 
   // Active + purchased — populated by useSync in App.jsx, no separate fetch
-  const { data: cartItems = [] } = useQuery({ queryKey: ['items', listId] })
+  const { data: cartItems = [] } = useItemsQuery(listId)
   const cartByCatalogId = new Map(
     cartItems.filter(i => i.catalog_id).map(i => [i.catalog_id, i])
   )
