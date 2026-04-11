@@ -44,7 +44,7 @@ export default function ItemRow({ item, status, disabled, loading, trailing, onC
     else if (status === 'purchased') trailingNode = <span className="text-primary text-sm font-semibold">✓</span>
     else trailingNode = <span className="text-gray-300 text-xl">+</span>
   } else if (localStorage.getItem('groupByCategory') === 'false' && item.category && CATEGORY_EMOJI[item.category]) {
-    trailingNode = <span className="text-base opacity-30">{CATEGORY_EMOJI[item.category]}</span>
+    trailingNode = <span className="text-base opacity-90">{CATEGORY_EMOJI[item.category]}</span>
   }
 
   const content = (
