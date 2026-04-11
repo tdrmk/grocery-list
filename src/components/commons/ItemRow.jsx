@@ -1,6 +1,23 @@
 import SwipeableRow from './SwipeableRow'
 import Spinner from './Spinner'
 
+const CATEGORY_EMOJI = {
+  'Produce':              '🥦',
+  'Dairy & Eggs':         '🥛',
+  'Bakery':               '🍞',
+  'Meat & Seafood':       '🥩',
+  'Frozen':               '🧊',
+  'Grains & Flours':      '🌾',
+  'Dals & Pulses':        '🫘',
+  'Pantry & Dry Goods':   '🫙',
+  'Spices & Masalas':     '🧂',
+  'Nuts & Dry Fruits':    '🥜',
+  'Snacks':               '🍿',
+  'Beverages':            '🥤',
+  'Household & Cleaning': '🧹',
+  'Personal Care':        '🧴',
+}
+
 // Shared item row used in ListView (shopping list) and AddItem (catalog).
 //
 // Props:
@@ -26,6 +43,8 @@ export default function ItemRow({ item, status, disabled, loading, trailing, onC
     if (status === 'added') trailingNode = <span className="text-sm">🛒</span>
     else if (status === 'purchased') trailingNode = <span className="text-primary text-sm font-semibold">✓</span>
     else trailingNode = <span className="text-gray-300 text-xl">+</span>
+  } else if (localStorage.getItem('groupByCategory') === 'false' && item.category && CATEGORY_EMOJI[item.category]) {
+    trailingNode = <span className="text-base opacity-30">{CATEGORY_EMOJI[item.category]}</span>
   }
 
   const content = (
