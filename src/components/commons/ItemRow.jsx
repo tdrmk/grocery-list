@@ -44,7 +44,7 @@ export default function ItemRow({ item, status, disabled, loading, trailing, onC
     else if (status === 'purchased') trailingNode = <span className="text-primary text-sm font-semibold">✓</span>
     else trailingNode = <span className="text-gray-300 text-xl">+</span>
   } else if (localStorage.getItem('groupByCategory') === 'false' && item.category && CATEGORY_EMOJI[item.category]) {
-    trailingNode = <span className="text-xs bg-white rounded-full w-5 h-5 flex items-center justify-center shadow-sm">{CATEGORY_EMOJI[item.category]}</span>
+    trailingNode = <span className="text-xs bg-white rounded-full w-5 h-5 flex items-center justify-center shadow-xs">{CATEGORY_EMOJI[item.category]}</span>
   }
 
   const content = (
@@ -63,7 +63,7 @@ export default function ItemRow({ item, status, disabled, loading, trailing, onC
   )
 
   return (
-    <li className="rounded-xl overflow-hidden shadow-sm">
+    <li className="rounded-xl overflow-hidden shadow-xs">
       {hasActions
         ? <SwipeableRow actions={actions} onClick={clickHandler}>{content}</SwipeableRow>
         : <div onClick={clickHandler}>{content}</div>
