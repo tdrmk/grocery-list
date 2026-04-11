@@ -44,7 +44,7 @@ export default function ItemRow({ item, status, disabled, loading, trailing, onC
     else if (status === 'purchased') trailingNode = <span className="text-primary text-sm font-semibold">✓</span>
     else trailingNode = <span className="text-gray-300 text-xl">+</span>
   } else if (localStorage.getItem('groupByCategory') === 'false' && item.category && CATEGORY_EMOJI[item.category]) {
-    trailingNode = <span className="text-xs bg-white rounded-full w-5 h-5 flex items-center justify-center shadow-xs">{CATEGORY_EMOJI[item.category]}</span>
+    trailingNode = <span className="text-base bg-white rounded-full w-6 h-6 flex items-center justify-center shadow-xs">{CATEGORY_EMOJI[item.category]}</span>
   }
 
   const content = (
@@ -55,7 +55,7 @@ export default function ItemRow({ item, status, disabled, loading, trailing, onC
       {item.notes && <span className="text-sm text-gray-300 italic">{item.notes}</span>}
       {trailingNode && (
         // Fixed width keeps the trailing element from shifting layout as content changes
-        <div className="w-5 h-5 flex items-center justify-center shrink-0">
+        <div className="w-6 h-6 flex items-center justify-center shrink-0">
           {trailingNode}
         </div>
       )}
