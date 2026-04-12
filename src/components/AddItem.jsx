@@ -27,9 +27,10 @@ function CategorySection({ title, children }) {
   )
 }
 
-function CatalogItemRow({ catalogItem, cartItem, listId, onEdit }) {
+function CatalogItemRow({ catalogItem, cartItem, listId }) {
   const showToast = useToast()
   const queryClient = useQueryClient()
+  const navigate = useNavigate()
 
   const { mutate: addItem, isPending: adding } = useMutation({
     mutationFn: async () => {
@@ -85,7 +86,7 @@ function CatalogItemRow({ catalogItem, cartItem, listId, onEdit }) {
       loading={adding || removing}
       trailing="badge"
       onClick={handleClick}
-      actions={onEdit ? [{ icon: '✏️', label: 'Edit', color: 'bg-blue-500', onAction: onEdit }] : undefined}
+      actions={catalogItem.is_global === false ? [{ icon: '✏️', label: 'Edit', color: 'bg-blue-500', onAction: () => navigate(`/list/${listId}/add/custom/edit`, { state: { existingItem: catalogItem } }) }] : undefined}
     />
   )
 }
@@ -154,6 +155,12 @@ export default function AddItem() {
     return acc
   }, {})
 
+  // Merge custom items into their category groups (filtered by search so they're searchable)
+  for (const item of filteredList) {
+    if (!grouped[item.category]) grouped[item.category] = []
+    grouped[item.category].push(item)
+  }
+
   return (
     <div className="min-h-dvh bg-gray-50">
       {/* Sticky header + search */}
@@ -183,7 +190,7 @@ export default function AddItem() {
       </div>
 
       {/* Recently purchased */}
-      {!search.trim() && recentItems.length > 0 && (
+      {!q && recentItems.length > 0 && (
         <CategorySection title="Recently purchased">
           {recentItems.map(recentItem => (
             <CatalogItemRow
@@ -210,16 +217,15 @@ export default function AddItem() {
         </CategorySection>
       ))}
 
-      {/* Custom items */}
-      {filteredList.length > 0 && (
-        <CategorySection title="Custom items">
-          {filteredList.map(item => (
+      {/* Own items — hidden during search to avoid duplication with categories */}
+      {!q && listCatalog.length > 0 && (
+        <CategorySection title="Own items">
+          {listCatalog.map(item => (
             <CatalogItemRow
               key={item.id}
               catalogItem={item}
               cartItem={cartByCatalogId.get(item.id)}
               listId={listId}
-              onEdit={() => navigate(`/list/${listId}/add/custom/edit`, { state: { existingItem: item } })}
             />
           ))}
         </CategorySection>
